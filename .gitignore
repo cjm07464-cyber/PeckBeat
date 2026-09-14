@@ -30,3 +30,4 @@
 
 sysinfo.txt
 .crashlytics/
+*.slnx
