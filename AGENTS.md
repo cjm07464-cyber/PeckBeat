@@ -1,52 +1,29 @@
-# AGENTS.md
+# Project Guidance
 
-## Project
-- Project name: PeckBeat
-- Korean title: 부리박자
-- Unity version: 6000.3.9f1
-- Template: Universal 2D
-- Goal: one-stage rhythm mini game prototype.
+This project is a collection of short rhythm minigames. Each stage may have different gameplay rules.
 
-## Core Concept
-The player controls a mother bird.
-Normal chicks should be fed on the beat.
-Cuckoo chicks should not be fed; they require a quick double-tap rhythm action.
+## Shared principles
+- Music timing is the core of gameplay.
+- There is no game over during a stage.
+- Use Unity Input System actions, not hardcoded keyboard/gamepad checks.
+- The game must support keyboard, standard gamepads, and Xbox Adaptive Controller-compatible mappings.
+- Use logical inputs such as `ActionA` and `ActionB`.
+- Keep shared systems limited to genuinely common concerns: rhythm clock/song time, input abstraction, audio, and result tracking.
+- Do not force stage-specific mechanics into one universal gameplay manager.
+- Final artwork will replace placeholder sprites later. Gameplay code must not depend on placeholder shapes/colors.
 
-## Input
-Use Unity New Input System only.
-Do not use UnityEngine.Input.GetKeyDown.
+## Current work
+Current implementation target: **Stage 1 – Feeding**.
 
-Primary input:
-- Keyboard D
-- Xbox Controller A / Gamepad buttonSouth
+Read:
+- `docs/STAGE_01_FEEDING.md`
 
-Secondary input:
-- Keyboard J
-- Xbox Controller B / Gamepad buttonEast
+## Deprecated prototype
+The previous prototype direction is obsolete and must not be treated as current design:
+- Ground → Tree → Air progression
+- walking/flying gameplay
+- 90-degree camera rotation
+- previous Suno prototype music
+- previous moving-note presentation tied to that concept
 
-## Code Rules
-- Keep scripts small and prototype-friendly.
-- Do not add DOTween unless explicitly requested.
-- Do not create GameManager or SoundManager unless explicitly requested.
-- Prefer SerializeField fields for Unity Inspector tuning.
-- Avoid touching Library, Temp, Obj, Logs, UserSettings.
-- Do not move Unity project settings unless requested.
-
-## Folder Rules
-Main project files should live under:
-Assets/_PeckBeat
-
-Scripts:
-Assets/_PeckBeat/Scripts
-
-Art:
-Assets/_PeckBeat/Art
-
-Audio:
-Assets/_PeckBeat/Audio
-
-Prefabs:
-Assets/_PeckBeat/Prefabs
-
-Scenes:
-Assets/_PeckBeat/Scenes
+Old code may be reused only when it is clearly useful for the new project structure.

@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9f185e3818a4cf6a01b63563a0ff24c, type: 3}
+  m_Name: Stage01_Feeding_Draft
+  m_EditorClassIdentifier: Assembly-CSharp::Stage01FeedingChart
+  bpm: 110
+  firstBeatOffset: 0.458
+  offsetAdjustment: 0
+  leadBeats: 2
+  judgeWindowSeconds: 0.14
+  resultHoldBeats: 0.5
+  exitDurationBeats: 1
+  events:
+  - targetBeat: 8
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 12
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 16
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 22
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 24
+    targetType: 1
+    secondPeckBeatOffset: 0.5
+  - targetBeat: 28
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 30
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 37
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 39
+    targetType: 1
+    secondPeckBeatOffset: 0.5
+  - targetBeat: 44
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 49
+    targetType: 1
+    secondPeckBeatOffset: 0.5
+  - targetBeat: 56
+    targetType: 1
+    secondPeckBeatOffset: 0.5
+  - targetBeat: 58
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 61
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 65
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 69
+    targetType: 1
+    secondPeckBeatOffset: 0.5
+  - targetBeat: 76
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 79
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 81
+    targetType: 1
+    secondPeckBeatOffset: 0.5
+  - targetBeat: 85
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 91
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 93
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 95
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 97
+    targetType: 1
+    secondPeckBeatOffset: 0.5
+  - targetBeat: 99
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 105
+    targetType: 1
+    secondPeckBeatOffset: 0.5
+  - targetBeat: 107
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 108
+    targetType: 1
+    secondPeckBeatOffset: 0.5
+  - targetBeat: 111
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 116
+    targetType: 0
+    secondPeckBeatOffset: 1
