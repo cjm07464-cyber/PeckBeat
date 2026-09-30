@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 
 public sealed class CuckooSpriteController : MonoBehaviour
@@ -13,23 +14,26 @@ public sealed class CuckooSpriteController : MonoBehaviour
 
     [SerializeField] private SpriteRenderer spriteRenderer;
 
-    [Header("State Sprites")]
-    [SerializeField] private Sprite idleSprite;
-    [SerializeField] private Sprite fedSprite;
-    [SerializeField] private Sprite exitSprite;
-    [SerializeField] private Sprite hit1Sprite;
-    [SerializeField] private Sprite hit2Sprite;
+    [Header("State Poses")]
+    [SerializeField] private SpritePose idle = new SpritePose();
+    [SerializeField] private SpritePose fed = new SpritePose();
+    [SerializeField] private SpritePose exit = new SpritePose();
+    [SerializeField] private SpritePose hit1 = new SpritePose();
+    [SerializeField] private SpritePose hit2 = new SpritePose();
 
     [Header("Hit2 Knockaway")]
+    [SerializeField] private Transform rotationVisual;
     [Min(0.01f)] [SerializeField] private float knockawayDuration = 1.2f;
     [SerializeField] private float horizontalDistance = 2f;
-    [Min(0.01f)] [SerializeField] private float arcHeight = 3f;
+    [Min(0.01f)] [SerializeField] private float arcHeight = 7f;
     [Min(0.01f)] [SerializeField] private float fallDistance = 7f;
+    [Range(0f, 6f)] [SerializeField] private float rotationTurns = 2.5f;
 
     private bool knockingAway;
     private bool descending;
     private double knockawayStartTime;
     private Vector3 knockawayStartPosition;
+    private Tween rotationTween;
 
     public State CurrentState { get; private set; }
 
@@ -49,6 +53,16 @@ public sealed class CuckooSpriteController : MonoBehaviour
         knockawayStartPosition = transform.position;
         knockawayStartTime = AudioSettings.dspTime;
         knockingAway = true;
+
+        if (rotationVisual != null)
+        {
+            rotationTween?.Kill();
+            rotationTween = rotationVisual.DOLocalRotate(
+                    new Vector3(0f, 0f, -360f * Mathf.Max(0f, rotationTurns)),
+                    Mathf.Max(0.01f, knockawayDuration),
+                    RotateMode.LocalAxisAdd)
+                .SetEase(Ease.Linear);
+        }
     }
 
     private void Update()
@@ -93,18 +107,21 @@ public sealed class CuckooSpriteController : MonoBehaviour
             return;
         }
 
-        Sprite stateSprite = state switch
+        SpritePose pose = state switch
         {
-            State.Fed => fedSprite,
-            State.Exit => exitSprite,
-            State.Hit1 => hit1Sprite,
-            State.Hit2 => hit2Sprite,
-            _ => idleSprite
+            State.Fed => fed,
+            State.Exit => exit,
+            State.Hit1 => hit1,
+            State.Hit2 => hit2,
+            _ => idle
         };
 
-        if (stateSprite != null)
-        {
-            spriteRenderer.sprite = stateSprite;
-        }
+        pose?.Apply(spriteRenderer);
+    }
+
+    private void OnDestroy()
+    {
+        rotationTween?.Kill();
+        rotationTween = null;
     }
 }

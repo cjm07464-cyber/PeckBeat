@@ -206,14 +206,14 @@ public sealed class Stage01FeedingController : MonoBehaviour
         if (target == null)
         {
             // Empty inputs affect only the mother and result count, never chart birds.
-            if (input.ActionAPressedThisFrame())
+            if (ActionAPressedThisFrame())
             {
                 motherBird?.PlayWrongFeed();
                 MissCount++;
                 audioController?.PlayMiss();
             }
 
-            if (input.ActionBPressedThisFrame())
+            if (ActionBPressedThisFrame())
             {
                 motherBird?.PlayWrongPeck();
                 MissCount++;
@@ -223,16 +223,36 @@ public sealed class Stage01FeedingController : MonoBehaviour
             return;
         }
 
-        if (input.ActionAPressedThisFrame())
+        if (ActionAPressedThisFrame())
         {
             HandleActionA(target, songTime);
             return;
         }
 
-        if (input.ActionBPressedThisFrame())
+        if (ActionBPressedThisFrame())
         {
             HandleActionB(target, songTime);
         }
+    }
+
+    private bool ActionAPressedThisFrame()
+    {
+        return TitleSession.SelectedInputMode switch
+        {
+            TitleSession.InputMode.Xbox => input.ActionAGamepadPressedThisFrame(),
+            TitleSession.InputMode.KeyboardMouse => input.ActionAKeyboardPressedThisFrame(),
+            _ => input.ActionAPressedThisFrame()
+        };
+    }
+
+    private bool ActionBPressedThisFrame()
+    {
+        return TitleSession.SelectedInputMode switch
+        {
+            TitleSession.InputMode.Xbox => input.ActionBGamepadPressedThisFrame(),
+            TitleSession.InputMode.KeyboardMouse => input.ActionBKeyboardPressedThisFrame(),
+            _ => input.ActionBPressedThisFrame()
+        };
     }
 
     private RuntimeBird FindInputTarget(double songTime)

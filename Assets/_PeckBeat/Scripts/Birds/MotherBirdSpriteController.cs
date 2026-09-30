@@ -15,13 +15,22 @@ public sealed class MotherBirdSpriteController : MonoBehaviour
 
     [SerializeField] private SpriteRenderer spriteRenderer;
 
-    [Header("State Sprites")]
-    [SerializeField] private Sprite idleSprite;
-    [SerializeField] private Sprite feedSprite;
-    [SerializeField] private Sprite peck1Sprite;
-    [SerializeField] private Sprite peck2Sprite;
-    [SerializeField] private Sprite wrongFeedSprite;
-    [SerializeField] private Sprite wrongPeckSprite;
+    [Header("State Poses")]
+    [SerializeField] private SpritePose idle = new SpritePose();
+    [SerializeField] private SpritePose feed = new SpritePose();
+    [SerializeField] private SpritePose peck1 = new SpritePose();
+    [SerializeField] private SpritePose peck2 = new SpritePose();
+    [SerializeField] private SpritePose wrongFeed = new SpritePose();
+    [SerializeField] private SpritePose wrongPeck = new SpritePose();
+
+    [Header("Worm Positions")]
+    [SerializeField] private Transform wormVisual;
+    [SerializeField] private Vector2 wormIdlePosition = Vector2.zero;
+    [SerializeField] private Vector2 wormFeedPosition = Vector2.zero;
+    [SerializeField] private Vector2 wormPeck1Position = Vector2.zero;
+    [SerializeField] private Vector2 wormPeck2Position = Vector2.zero;
+    [SerializeField] private Vector2 wormWrongFeedPosition = Vector2.zero;
+    [SerializeField] private Vector2 wormWrongPeckPosition = Vector2.zero;
 
     [Header("Timing")]
     [Min(0f)]
@@ -30,6 +39,7 @@ public sealed class MotherBirdSpriteController : MonoBehaviour
     private Coroutine returnToIdleRoutine;
 
     public State CurrentState { get; private set; }
+    public event System.Action<State> StateChanging;
 
     private void Awake()
     {
@@ -63,18 +73,12 @@ public sealed class MotherBirdSpriteController : MonoBehaviour
 
     public void SetState(State state)
     {
+        StateChanging?.Invoke(state);
         CurrentState = state;
 
-        if (spriteRenderer == null)
-        {
-            return;
-        }
-
-        Sprite stateSprite = GetSprite(state);
-        if (stateSprite != null)
-        {
-            spriteRenderer.sprite = stateSprite;
-        }
+        SpritePose pose = GetPose(state);
+        pose?.Apply(spriteRenderer);
+        ApplyWormPosition(state);
     }
 
     private void PlayTemporaryState(State state)
@@ -95,16 +99,36 @@ public sealed class MotherBirdSpriteController : MonoBehaviour
         returnToIdleRoutine = null;
     }
 
-    private Sprite GetSprite(State state)
+    private SpritePose GetPose(State state)
     {
         return state switch
         {
-            State.Feed => feedSprite,
-            State.Peck1 => peck1Sprite,
-            State.Peck2 => peck2Sprite,
-            State.WrongFeed => wrongFeedSprite,
-            State.WrongPeck => wrongPeckSprite,
-            _ => idleSprite
+            State.Feed => feed,
+            State.Peck1 => peck1,
+            State.Peck2 => peck2,
+            State.WrongFeed => wrongFeed,
+            State.WrongPeck => wrongPeck,
+            _ => idle
         };
+    }
+
+    private void ApplyWormPosition(State state)
+    {
+        if (wormVisual == null)
+        {
+            return;
+        }
+
+        Vector2 position = state switch
+        {
+            State.Feed => wormFeedPosition,
+            State.Peck1 => wormPeck1Position,
+            State.Peck2 => wormPeck2Position,
+            State.WrongFeed => wormWrongFeedPosition,
+            State.WrongPeck => wormWrongPeckPosition,
+            _ => wormIdlePosition
+        };
+
+        wormVisual.localPosition = new Vector3(position.x, position.y, wormVisual.localPosition.z);
     }
 }

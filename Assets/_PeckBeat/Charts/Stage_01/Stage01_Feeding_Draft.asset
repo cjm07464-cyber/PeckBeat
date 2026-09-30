@@ -41,18 +41,27 @@ MonoBehaviour:
   - targetBeat: 30
     targetType: 0
     secondPeckBeatOffset: 1
+  - targetBeat: 32
+    targetType: 0
+    secondPeckBeatOffset: 1
   - targetBeat: 37
     targetType: 0
     secondPeckBeatOffset: 1
   - targetBeat: 39
     targetType: 1
     secondPeckBeatOffset: 0.5
+  - targetBeat: 41
+    targetType: 0
+    secondPeckBeatOffset: 1
   - targetBeat: 44
     targetType: 0
     secondPeckBeatOffset: 1
   - targetBeat: 49
     targetType: 1
     secondPeckBeatOffset: 0.5
+  - targetBeat: 53
+    targetType: 0
+    secondPeckBeatOffset: 1
   - targetBeat: 56
     targetType: 1
     secondPeckBeatOffset: 0.5
@@ -68,6 +77,9 @@ MonoBehaviour:
   - targetBeat: 69
     targetType: 1
     secondPeckBeatOffset: 0.5
+  - targetBeat: 73
+    targetType: 0
+    secondPeckBeatOffset: 1
   - targetBeat: 76
     targetType: 0
     secondPeckBeatOffset: 1
@@ -77,6 +89,9 @@ MonoBehaviour:
   - targetBeat: 81
     targetType: 1
     secondPeckBeatOffset: 0.5
+  - targetBeat: 83
+    targetType: 0
+    secondPeckBeatOffset: 1
   - targetBeat: 85
     targetType: 0
     secondPeckBeatOffset: 1
@@ -93,6 +108,9 @@ MonoBehaviour:
     targetType: 1
     secondPeckBeatOffset: 0.5
   - targetBeat: 99
+    targetType: 0
+    secondPeckBeatOffset: 1
+  - targetBeat: 101
     targetType: 0
     secondPeckBeatOffset: 1
   - targetBeat: 105

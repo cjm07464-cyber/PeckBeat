@@ -1,0 +1,287 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6aa0ff61e453b740a696b9900d3ce0e, type: 3}
+  m_Name: Stage02_Sculpting_Draft
+  m_EditorClassIdentifier: Assembly-CSharp::Stage02SculptingChart
+  bpm: 110
+  firstBeatOffset: 0.406
+  offsetAdjustment: 0
+  leadBeats: 2
+  judgeWindowSeconds: 0.12
+  resultHoldBeats: 0.5
+  exitDurationBeats: 1
+  events:
+  - targetBeat: 4
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 8
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 12
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 16
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 20
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 22
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 28
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 32
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 36
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 38
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 42
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 48
+    targetType: 1
+    requiredHits: 1
+    holdEndBeat: 50
+    sculptureType: 0
+  - targetBeat: 52
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 56
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 60
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 64
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 68
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 72
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 74
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 78
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 80
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 84
+    targetType: 1
+    requiredHits: 1
+    holdEndBeat: 86
+    sculptureType: 0
+  - targetBeat: 88
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 92
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 94
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 98
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 100
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 104
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 110
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 114
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 116
+    targetType: 1
+    requiredHits: 1
+    holdEndBeat: 118
+    sculptureType: 0
+  - targetBeat: 120
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 124
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 126
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 130
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 132
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 136
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 140
+    targetType: 1
+    requiredHits: 1
+    holdEndBeat: 142
+    sculptureType: 0
+  - targetBeat: 144
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 146
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 148
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 150
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 152
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 156
+    targetType: 1
+    requiredHits: 1
+    holdEndBeat: 158
+    sculptureType: 0
+  - targetBeat: 160
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 162
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 164
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 166
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 168
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 172
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 174
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0
+  - targetBeat: 177
+    targetType: 0
+    requiredHits: 2
+    holdEndBeat: 0
+    sculptureType: 1
+  - targetBeat: 180
+    targetType: 0
+    requiredHits: 1
+    holdEndBeat: 0
+    sculptureType: 0

@@ -27,7 +27,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.2, y: 0.2, z: 1}
+  m_LocalScale: {x: 0.26, y: 0.26, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8078802126165520456}
@@ -46,15 +46,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CuckooSpriteController
   spriteRenderer: {fileID: 4734053946885409797}
-  idleSprite: {fileID: 21300000, guid: e55ade3e4a063094f946ba6af2fee5cd, type: 3}
-  fedSprite: {fileID: 21300000, guid: ee5e682493d630d40a5102cf629f5260, type: 3}
-  exitSprite: {fileID: 21300000, guid: 9a8f3960357f2da4391ee1fd3b38a40c, type: 3}
-  hit1Sprite: {fileID: 21300000, guid: 7398c88df91cdf2409c18d5656a2db65, type: 3}
-  hit2Sprite: {fileID: 21300000, guid: 5f58b293b21e6b74db0b811a5cc7c6c9, type: 3}
+  idle:
+    sprite: {fileID: 21300000, guid: 4dc6d3387797b8e46a027fb8d2642b1f, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 0
+  fed:
+    sprite: {fileID: 21300000, guid: 10b16d2c0208ed54397bcf234249705d, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 0
+  exit:
+    sprite: {fileID: 21300000, guid: 4dc6d3387797b8e46a027fb8d2642b1f, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 1
+  hit1:
+    sprite: {fileID: -1290531771311240058, guid: 2c218493b3be77642a5c61f2b33a3699, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 0
+  hit2:
+    sprite: {fileID: 21300000, guid: 60d7c060078f24f4e9a255ba43a0d915, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 1
+  rotationVisual: {fileID: 8078802126165520456}
   knockawayDuration: 1.2
   horizontalDistance: 2
-  arcHeight: 3
+  arcHeight: 7
   fallDistance: 7
+  rotationTurns: 2.5
 --- !u!1 &8919590662210913452
 GameObject:
   m_ObjectHideFlags: 0
@@ -137,7 +159,7 @@ SpriteRenderer:
   m_SortingOrder: -5
   m_MaskInteraction: 0
   m_Sprite: {fileID: -2413806693520163455, guid: 4313ae942d8bcc643917ec40a78e510f, type: 3}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

@@ -11,10 +11,10 @@ public sealed class ChickSpriteController : MonoBehaviour
 
     [SerializeField] private SpriteRenderer spriteRenderer;
 
-    [Header("State Sprites")]
-    [SerializeField] private Sprite idleSprite;
-    [SerializeField] private Sprite fedSprite;
-    [SerializeField] private Sprite exitSprite;
+    [Header("State Poses")]
+    [SerializeField] private SpritePose idle = new SpritePose();
+    [SerializeField] private SpritePose fed = new SpritePose();
+    [SerializeField] private SpritePose exit = new SpritePose();
 
     public State CurrentState { get; private set; }
 
@@ -32,16 +32,13 @@ public sealed class ChickSpriteController : MonoBehaviour
             return;
         }
 
-        Sprite stateSprite = state switch
+        SpritePose pose = state switch
         {
-            State.Fed => fedSprite,
-            State.Exit => exitSprite,
-            _ => idleSprite
+            State.Fed => fed,
+            State.Exit => exit,
+            _ => idle
         };
 
-        if (stateSprite != null)
-        {
-            spriteRenderer.sprite = stateSprite;
-        }
+        pose?.Apply(spriteRenderer);
     }
 }

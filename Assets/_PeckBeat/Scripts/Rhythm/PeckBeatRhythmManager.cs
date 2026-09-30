@@ -21,6 +21,9 @@ public sealed class PeckBeatRhythmManager : MonoBehaviour
     private int secondaryCount;
 
     public double SongTime => songTime;
+    public bool IsSongPlaying => isActiveAndEnabled && bgmSource != null &&
+                                 bgmSource.isPlaying && AudioSettings.dspTime >= scheduledStartDspTime;
+    public double PlaybackSongTime => AudioSettings.dspTime - scheduledStartDspTime;
 
     private void Start()
     {
