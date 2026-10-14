@@ -31,10 +31,12 @@ public sealed class TitleManager : MonoBehaviour
 
     [Header("Scene Flow")]
     [SerializeField] private string stage01SceneName = "Stage01_Prototype";
+    [SerializeField] private string stage02SceneName = "Stage02";
 
     [Header("Roots")]
     [SerializeField] private RectTransform titleRoot;
     [SerializeField] private GameObject stage01Title;
+    [SerializeField] private GameObject stage02Title;
 
     [Header("Panels")]
     [SerializeField] private GameObject inputSelectPanel;
@@ -103,6 +105,19 @@ public sealed class TitleManager : MonoBehaviour
     [InspectorName("English Stage01 Title Sprite")]
     [SerializeField] private Sprite englishStage01TitleSprite;
 
+    [Header("Stage02 Title")]
+    [SerializeField] private Image stage02BackgroundImage;
+    [SerializeField] private Sprite stage02BackgroundSprite;
+    [SerializeField] private Image stage02LogoImage;
+    [SerializeField] private Sprite koreanStage02LogoSprite;
+    [SerializeField] private Sprite englishStage02LogoSprite;
+    [SerializeField] private Stage02TitleGuideUI stage02TitleGuideUI;
+    [Min(0f)] [SerializeField] private float stage02TitleFadeDuration = 0.4f;
+    [Min(0f)] [SerializeField] private float interStageClosedCurtainDelay = 2f;
+    [Min(0f)] [SerializeField] private float stage02TitleAfterBgmDelay = 2f;
+    [Min(0f)] [SerializeField] private float stage02LoadAfterCurtainCloseDelay = 1f;
+    [SerializeField] private bool allowStage02TitleManualSkip = true;
+
     [Header("Title BGM")]
     [SerializeField] private AudioSource titleBgmSource;
     [SerializeField] private AudioClip titleBgmClip;
@@ -162,6 +177,15 @@ public sealed class TitleManager : MonoBehaviour
     [InspectorName("Stage01 Title BGM Clip")]
     [SerializeField] private AudioClip stage01TitleBgmClip;
 
+    [Header("Stage01 Intro Dialogue")]
+    [SerializeField] private TitleIntroDialogueController introDialogueController;
+    [SerializeField] private bool playIntroDialogueBeforeStage01Title = true;
+    [Min(0f)] [SerializeField] private float delayAfterIntroDialogueBeforeStage01Title = 1f;
+    [Min(0f)] [SerializeField] private float stage01TitleFadeDuration = 0.4f;
+
+    [Header("Stage01 Transition Timing")]
+    [Min(0f)] [SerializeField] private float delayAfterStage01TitleBgm = 1f;
+
     [Header("Stage Start Curtain")]
     [InspectorName("Left Curtain RectTransform")]
     [SerializeField] private RectTransform leftCurtain;
@@ -182,27 +206,51 @@ public sealed class TitleManager : MonoBehaviour
     private Vector2 towMouseRestPosition;
     private Vector2 leftCurtainOpenPosition;
     private Vector2 rightCurtainOpenPosition;
+    private float stage02TitleBgmExpectedDuration;
+    private double stage02TitleBgmStartDspTime;
     private Vector3 xboxOptionBaseScale = Vector3.one;
     private Vector3 keyboardMouseOptionBaseScale = Vector3.one;
     private Vector3 koreanOptionBaseScale = Vector3.one;
     private Vector3 englishOptionBaseScale = Vector3.one;
+    private TitleSession.TitleFlowMode startupFlowMode;
 
     private void Awake()
     {
+        startupFlowMode = TitleSession.FlowMode;
         CaptureOptionBaseScales();
 
-        if (stage01Title != null)
+        SetActive(stage01Title, false);
+        SetActive(stage02Title, false);
+
+        if (startupFlowMode == TitleSession.TitleFlowMode.NormalTitle)
         {
-            stage01Title.SetActive(true);
+            ShowInputSelect();
+        }
+        else
+        {
+            RestoreSelectionsFromSession();
+            HideNormalTitlePanels();
         }
 
-        ShowInputSelect();
         PrepareIntroVisuals();
     }
 
     private void Start()
     {
-        StartCoroutine(ShowInitialInputPanelRoutine());
+        switch (startupFlowMode)
+        {
+            case TitleSession.TitleFlowMode.InterStageToStage02:
+                StartCoroutine(ShowInterStageStage02TitleRoutine());
+                break;
+
+            case TitleSession.TitleFlowMode.PostStage02Intro:
+                StartCoroutine(ShowPostStage02ClosedCurtainRoutine());
+                break;
+
+            default:
+                StartCoroutine(ShowInitialInputPanelRoutine());
+                break;
+        }
     }
 
     private void Update()
@@ -303,6 +351,187 @@ public sealed class TitleManager : MonoBehaviour
         RefreshInputFocus();
     }
 
+    private void RestoreSelectionsFromSession()
+    {
+        selectedInputMode = TitleSession.SelectedInputMode switch
+        {
+            TitleSession.InputMode.Xbox => SelectedInputMode.Xbox,
+            TitleSession.InputMode.KeyboardMouse => SelectedInputMode.KeyboardMouse,
+            _ => SelectedInputMode.None
+        };
+
+        selectedLanguage = TitleSession.SelectedLanguage == TitleSession.Language.English
+            ? SelectedLanguage.English
+            : SelectedLanguage.Korean;
+    }
+
+    private void HideNormalTitlePanels()
+    {
+        inputLocked = true;
+        state = TitleState.StartingGame;
+        SetActive(inputSelectPanel, false);
+        SetActive(languageSelectPanel, false);
+        SetActive(mainTitlePanel, false);
+        SetActive(stage01Title, false);
+        SetActive(stage02Title, false);
+    }
+
+    private IEnumerator ShowInterStageStage02TitleRoutine()
+    {
+        Debug.Log("[Title] InterStageToStage02 started", this);
+        HideNormalTitlePanels();
+        SetCanvasGroupAlpha(blackOverlay, 1f);
+        SetCanvasGroupAlpha(lightOverlay, 0f);
+
+        if (towMouse != null)
+        {
+            towMouse.gameObject.SetActive(false);
+        }
+
+        SetCanvasGroupAlpha(towMouseCanvasGroup, 0f);
+        StopTowMouseAudio();
+        Debug.Log("[Title] TowMouse skipped for Stage02 interstage", this);
+
+        SetActive(leftCurtain != null ? leftCurtain.gameObject : null, true);
+        SetActive(rightCurtain != null ? rightCurtain.gameObject : null, true);
+        BringInterStageCurtainsToFront();
+        PrepareInterStageAudioSources();
+
+        yield return CloseCurtainsRoutine();
+        yield return WaitUnscaled(interStageClosedCurtainDelay);
+        yield return RevealStage02TitleRoutine();
+        BringInterStageCurtainsToFront();
+        yield return OpenCurtainsRoutine();
+        Debug.Log("[Title] Stage02_Title shown", this);
+
+        yield return null;
+        yield return WaitForStage02TitleBgmOrManualSkip(stage02TitleBgmExpectedDuration);
+        yield return WaitUnscaled(stage02TitleAfterBgmDelay);
+
+        BringInterStageCurtainsToFront();
+        yield return CloseCurtainsRoutine();
+        yield return WaitUnscaled(stage02LoadAfterCurtainCloseDelay);
+
+        TitleSession.FlowMode = TitleSession.TitleFlowMode.NormalTitle;
+        Debug.Log("[Title] Loading Stage02", this);
+        SceneManager.LoadScene(stage02SceneName);
+    }
+
+    private IEnumerator RevealStage02TitleRoutine()
+    {
+        if (stage02Title == null)
+        {
+            Debug.LogWarning(
+                "[TitleManager] Stage02_Title is not connected. Run PeckBeat/Title/Build Stage02 Title UI.",
+                this);
+            SetCanvasGroupAlpha(blackOverlay, 0f);
+            yield break;
+        }
+
+        CanvasGroup canvasGroup = stage02Title.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+        {
+            canvasGroup = stage02Title.AddComponent<CanvasGroup>();
+        }
+
+        stage02Title.SetActive(true);
+        canvasGroup.alpha = 1f;
+        canvasGroup.interactable = false;
+        canvasGroup.blocksRaycasts = false;
+
+        ApplySelectedStage02TitleImages();
+        stage02TitleGuideUI?.RefreshGuide();
+
+        float duration = Mathf.Max(0f, stage02TitleFadeDuration);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float progress = Mathf.SmoothStep(0f, 1f, NormalizedTime(elapsed, duration));
+            SetCanvasGroupAlpha(blackOverlay, 1f - progress);
+            yield return null;
+        }
+
+        SetCanvasGroupAlpha(blackOverlay, 0f);
+        PlayTitleSfx(logoLandSfx);
+        stage02TitleBgmExpectedDuration = PlayStageTitleBgmForInterStage();
+    }
+
+    private IEnumerator WaitForStage02TitleBgmOrManualSkip(float expectedDuration)
+    {
+        float duration = Mathf.Max(0f, expectedDuration);
+        double expectedEndDspTime = stage02TitleBgmStartDspTime + duration;
+
+        while (AudioSettings.dspTime < expectedEndDspTime)
+        {
+            if (allowStage02TitleManualSkip && InterStageStartInputPressed())
+            {
+                Debug.Log("[Title] Stage02 start input detected", this);
+                PlayTitleSfx(startPressSfx);
+                stage01TitleBgmSource?.Stop();
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
+
+    private void PrepareInterStageAudioSources()
+    {
+        if (titleBgmSource != null)
+        {
+            // This source is the normal title BGM (MP_Surfing dance in TitleScene).
+            titleBgmSource.Stop();
+        }
+
+        titleSfxSource?.UnPause();
+        stage01TitleBgmSource?.UnPause();
+    }
+
+    private void BringInterStageCurtainsToFront()
+    {
+        if (leftCurtain != null)
+        {
+            leftCurtain.SetAsLastSibling();
+        }
+
+        if (rightCurtain != null)
+        {
+            rightCurtain.SetAsLastSibling();
+        }
+    }
+
+    private IEnumerator ShowPostStage02ClosedCurtainRoutine()
+    {
+        HideNormalTitlePanels();
+        SetCanvasGroupAlpha(blackOverlay, 1f);
+        SetCanvasGroupAlpha(lightOverlay, 0f);
+
+        if (towMouse != null)
+        {
+            towMouse.gameObject.SetActive(false);
+        }
+
+        SetCanvasGroupAlpha(towMouseCanvasGroup, 0f);
+        StopTowMouseAudio();
+        PrepareInterStageAudioSources();
+
+        SetActive(leftCurtain != null ? leftCurtain.gameObject : null, true);
+        SetActive(rightCurtain != null ? rightCurtain.gameObject : null, true);
+        BringInterStageCurtainsToFront();
+        yield return CloseCurtainsRoutine();
+
+        if (introDialogueController == null)
+        {
+            Debug.LogWarning(
+                "[Title] PostStage02Intro cannot start because TitleIntroDialogueController is not connected.",
+                this);
+            yield break;
+        }
+
+        yield return introDialogueController.PlayPostStage02Outro();
+    }
+
     private void PrepareIntroVisuals()
     {
         inputLocked = true;
@@ -315,7 +544,7 @@ public sealed class TitleManager : MonoBehaviour
         SetCanvasGroupAlpha(logoCanvasGroup, 0f);
         SetCanvasGroupAlpha(backgroundCanvasGroup, 0f);
         SetCanvasGroupAlpha(mascotDecorationCanvasGroup, 0f);
-        SetCanvasGroupAlpha(pressAnyButtonCanvasGroup, 0f);
+        SetPressAnyButtonAlpha(0f);
 
         if (inputSelectPanel != null)
         {
@@ -477,7 +706,7 @@ public sealed class TitleManager : MonoBehaviour
         SetCanvasGroupAlpha(logoCanvasGroup, 1f);
         SetCanvasGroupAlpha(backgroundCanvasGroup, 0f);
         SetCanvasGroupAlpha(mascotDecorationCanvasGroup, 0f);
-        SetCanvasGroupAlpha(pressAnyButtonCanvasGroup, 0f);
+        SetPressAnyButtonAlpha(0f);
 
         if (logo != null)
         {
@@ -578,17 +807,17 @@ public sealed class TitleManager : MonoBehaviour
         float duration = Mathf.Max(0f, pressAnyButtonRevealDuration);
         float elapsed = 0f;
 
-        SetCanvasGroupAlpha(pressAnyButtonCanvasGroup, 0f);
+        SetPressAnyButtonAlpha(0f);
 
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.SmoothStep(0f, 1f, NormalizedTime(elapsed, duration));
-            SetCanvasGroupAlpha(pressAnyButtonCanvasGroup, t);
+            SetPressAnyButtonAlpha(t);
             yield return null;
         }
 
-        SetCanvasGroupAlpha(pressAnyButtonCanvasGroup, 1f);
+        SetPressAnyButtonAlpha(1f);
     }
 
     private void PlayTitleBgm()
@@ -688,6 +917,9 @@ public sealed class TitleManager : MonoBehaviour
 
     private IEnumerator StartGameRoutine()
     {
+        bool shouldPlayIntroDialogue =
+            playIntroDialogueBeforeStage01Title && introDialogueController != null;
+
         state = TitleState.StartingGame;
         inputLocked = true;
         float startPressDuration = PlayTitleSfx(startPressSfx);
@@ -697,21 +929,57 @@ public sealed class TitleManager : MonoBehaviour
         SetActive(languageSelectPanel, false);
         SetActive(mainTitlePanel, true);
 
-        if (stage01Title != null)
-        {
-            stage01Title.SetActive(true);
-        }
-
         yield return TowMouseTransitionRoutine();
         if (titleBgmSource != null)
         {
             titleBgmSource.Stop();
         }
 
+        if (shouldPlayIntroDialogue)
+        {
+            yield return introDialogueController.PlayIntroDialogue();
+            yield return WaitUnscaled(delayAfterIntroDialogueBeforeStage01Title);
+        }
+
+        yield return RevealStage01TitleRoutine();
+
+        if (shouldPlayIntroDialogue)
+        {
+            introDialogueController.ReleaseIntroBackground();
+        }
         yield return PlayAndWaitForStage01TitleBgm();
+        yield return WaitUnscaled(delayAfterStage01TitleBgm);
         yield return CloseCurtainsRoutine();
         yield return WaitUnscaled(curtainWaitBeforeLoad);
         SceneManager.LoadScene(stage01SceneName);
+    }
+
+    private IEnumerator RevealStage01TitleRoutine()
+    {
+        if (stage01Title == null)
+        {
+            yield break;
+        }
+
+        CanvasGroup canvasGroup = stage01Title.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+        {
+            canvasGroup = stage01Title.AddComponent<CanvasGroup>();
+        }
+
+        stage01Title.SetActive(true);
+        canvasGroup.alpha = 0f;
+
+        float duration = Mathf.Max(0f, stage01TitleFadeDuration);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            canvasGroup.alpha = Mathf.SmoothStep(0f, 1f, NormalizedTime(elapsed, duration));
+            yield return null;
+        }
+
+        canvasGroup.alpha = 1f;
     }
 
     private IEnumerator TowMouseTransitionRoutine()
@@ -725,7 +993,15 @@ public sealed class TitleManager : MonoBehaviour
         if (towMouse != null)
         {
             towMouse.anchoredPosition = mouseStart;
-            towMouse.gameObject.SetActive(true);
+        if (startupFlowMode == TitleSession.TitleFlowMode.NormalTitle
+            && playIntroDialogueBeforeStage01Title
+            && introDialogueController != null)
+        {
+            // This runs after the Start Press SFX wait and immediately before the tow begins.
+            introDialogueController.PrepareIntroBackgroundForTow();
+        }
+
+        towMouse.gameObject.SetActive(true);
         }
 
         SetCanvasGroupAlpha(towMouseCanvasGroup, 1f);
@@ -797,6 +1073,56 @@ public sealed class TitleManager : MonoBehaviour
         }
     }
 
+    private float PlayStageTitleBgmForInterStage()
+    {
+        if (stage01TitleBgmSource == null)
+        {
+            Debug.LogWarning(
+                "[TitleManager] Stage01 Title BGM Source is not connected for Stage02_Title.",
+                this);
+            return 0f;
+        }
+
+        stage01TitleBgmSource.Stop();
+        stage01TitleBgmSource.playOnAwake = false;
+        stage01TitleBgmSource.loop = false;
+        stage01TitleBgmSource.UnPause();
+
+        if (stage01TitleBgmClip != null)
+        {
+            stage01TitleBgmSource.clip = stage01TitleBgmClip;
+        }
+
+        if (stage01TitleBgmSource.clip == null)
+        {
+            Debug.LogWarning(
+                "[TitleManager] Stage01 Title BGM Clip is not connected for Stage02_Title.",
+                this);
+            return 0f;
+        }
+
+        stage02TitleBgmStartDspTime = AudioSettings.dspTime;
+        stage01TitleBgmSource.Play();
+        Debug.Log("[Title] Stage02_Title BGM started", this);
+        return GetAudioPlaybackDuration(stage01TitleBgmSource);
+    }
+
+    private static float GetAudioPlaybackDuration(AudioSource source)
+    {
+        if (source == null || source.clip == null)
+        {
+            return 0f;
+        }
+
+        float playbackSpeed = Mathf.Abs(source.pitch);
+        if (playbackSpeed <= 0.01f)
+        {
+            return Mathf.Max(0f, source.clip.length);
+        }
+
+        return Mathf.Max(0f, source.clip.length / playbackSpeed);
+    }
+
     private IEnumerator CloseCurtainsRoutine()
     {
         if (leftCurtain == null && rightCurtain == null)
@@ -855,6 +1181,67 @@ public sealed class TitleManager : MonoBehaviour
         if (rightCurtain != null)
         {
             rightCurtain.anchoredPosition = rightClosedPosition;
+        }
+    }
+
+    private IEnumerator OpenCurtainsRoutine()
+    {
+        if (leftCurtain == null && rightCurtain == null)
+        {
+            yield break;
+        }
+
+        Vector2 leftClosedPosition = leftCurtainOpenPosition;
+        Vector2 rightClosedPosition = rightCurtainOpenPosition;
+
+        if (leftCurtain != null)
+        {
+            leftCurtain.gameObject.SetActive(true);
+            leftClosedPosition += Vector2.right * leftCurtain.rect.width;
+            leftCurtain.anchoredPosition = leftClosedPosition;
+        }
+
+        if (rightCurtain != null)
+        {
+            rightCurtain.gameObject.SetActive(true);
+            rightClosedPosition += Vector2.left * rightCurtain.rect.width;
+            rightCurtain.anchoredPosition = rightClosedPosition;
+        }
+
+        float duration = Mathf.Max(0f, curtainCloseDuration);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float progress = Mathf.SmoothStep(0f, 1f, NormalizedTime(elapsed, duration));
+
+            if (leftCurtain != null)
+            {
+                leftCurtain.anchoredPosition = Vector2.LerpUnclamped(
+                    leftClosedPosition,
+                    leftCurtainOpenPosition,
+                    progress);
+            }
+
+            if (rightCurtain != null)
+            {
+                rightCurtain.anchoredPosition = Vector2.LerpUnclamped(
+                    rightClosedPosition,
+                    rightCurtainOpenPosition,
+                    progress);
+            }
+
+            yield return null;
+        }
+
+        if (leftCurtain != null)
+        {
+            leftCurtain.anchoredPosition = leftCurtainOpenPosition;
+        }
+
+        if (rightCurtain != null)
+        {
+            rightCurtain.anchoredPosition = rightCurtainOpenPosition;
         }
     }
 
@@ -1031,6 +1418,47 @@ public sealed class TitleManager : MonoBehaviour
         ApplySpriteIfAssigned(stage01TitleImage, selectedSprite);
     }
 
+    private void ApplySelectedStage02TitleImages()
+    {
+        PrepareStage02TitleImage(
+            stage02BackgroundImage,
+            stage02BackgroundSprite,
+            "Stage02Background");
+
+        Sprite selectedLogo = selectedLanguage == SelectedLanguage.Korean
+            ? koreanStage02LogoSprite
+            : englishStage02LogoSprite;
+        PrepareStage02TitleImage(stage02LogoImage, selectedLogo, "Stage02Logo");
+    }
+
+    private void PrepareStage02TitleImage(Image target, Sprite configuredSprite, string label)
+    {
+        if (target == null)
+        {
+            Debug.LogWarning($"[Title] {label} Image reference is missing.", this);
+            return;
+        }
+
+        target.gameObject.SetActive(true);
+        if (configuredSprite != null)
+        {
+            target.sprite = configuredSprite;
+        }
+
+        if (target.sprite == null)
+        {
+            target.enabled = false;
+            Debug.LogWarning($"[Title] {label} Sprite is not assigned.", this);
+            return;
+        }
+
+        target.enabled = true;
+        target.preserveAspect = true;
+        Color color = target.color;
+        color.a = 1f;
+        target.color = color;
+    }
+
     private void MoveFocusFrame(RectTransform frame, RectTransform target)
     {
         if (frame == null || target == null)
@@ -1071,6 +1499,45 @@ public sealed class TitleManager : MonoBehaviour
             SelectedInputMode.KeyboardMouse => KeyboardAnyButton(),
             _ => false
         };
+    }
+
+    private static bool InterStageStartInputPressed()
+    {
+        bool keyboardPressed = InterStageKeyboardStartPressed();
+        bool gamepadPressed = InterStageGamepadStartPressed();
+
+        bool preferredInputPressed = TitleSession.SelectedInputMode switch
+        {
+            TitleSession.InputMode.Xbox => gamepadPressed,
+            TitleSession.InputMode.KeyboardMouse => keyboardPressed,
+            _ => keyboardPressed || gamepadPressed
+        };
+
+        // Inter-stage screens also accept the supported backup device so a stale
+        // session selection cannot leave the player stuck on Stage02_Title.
+        return preferredInputPressed || keyboardPressed || gamepadPressed;
+    }
+
+    private static bool InterStageKeyboardStartPressed()
+    {
+        Keyboard keyboard = Keyboard.current;
+        // Logical mapping: keyboard D = Xbox A, keyboard J = Xbox B.
+        return keyboard != null &&
+               (keyboard.dKey.wasPressedThisFrame ||
+                keyboard.jKey.wasPressedThisFrame ||
+                keyboard.enterKey.wasPressedThisFrame ||
+                keyboard.numpadEnterKey.wasPressedThisFrame ||
+                keyboard.spaceKey.wasPressedThisFrame);
+    }
+
+    private static bool InterStageGamepadStartPressed()
+    {
+        Gamepad gamepad = Gamepad.current;
+        // Xbox A/B and Menu(Start) are all valid Stage02_Title start inputs.
+        return gamepad != null &&
+               (gamepad.buttonSouth.wasPressedThisFrame ||
+                gamepad.buttonEast.wasPressedThisFrame ||
+                gamepad.startButton.wasPressedThisFrame);
     }
 
     private static bool KeyboardActionA()
@@ -1174,6 +1641,29 @@ public sealed class TitleManager : MonoBehaviour
         float shifted = t - 1f;
         return 1f + (overshoot + 1f) * shifted * shifted * shifted
             + overshoot * shifted * shifted;
+    }
+
+    private void SetPressAnyButtonAlpha(float alpha)
+    {
+        float clampedAlpha = Mathf.Clamp01(alpha);
+
+        // Keep the group itself visible and drive the actual Image/TMP graphics.
+        // This also works when the assigned CanvasGroup is not their direct parent.
+        SetCanvasGroupAlpha(pressAnyButtonCanvasGroup, 1f);
+        SetGraphicAlpha(pressAnyButtonImage, clampedAlpha);
+        SetGraphicAlpha(pressAnyButtonText, clampedAlpha);
+    }
+
+    private static void SetGraphicAlpha(Graphic graphic, float alpha)
+    {
+        if (graphic == null)
+        {
+            return;
+        }
+
+        Color color = graphic.color;
+        color.a = Mathf.Clamp01(alpha);
+        graphic.color = color;
     }
 
     private static void SetCanvasGroupAlpha(CanvasGroup canvasGroup, float alpha)

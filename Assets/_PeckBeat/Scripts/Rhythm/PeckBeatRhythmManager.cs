@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public sealed class PeckBeatRhythmManager : MonoBehaviour
@@ -19,11 +20,29 @@ public sealed class PeckBeatRhythmManager : MonoBehaviour
     private double songTime;
     private int primaryCount;
     private int secondaryCount;
+    private bool playbackPaused;
+    private double pauseStartedDspTime;
 
     public double SongTime => songTime;
-    public bool IsSongPlaying => isActiveAndEnabled && bgmSource != null &&
+    public bool IsSongPlaying => !playbackPaused && isActiveAndEnabled && bgmSource != null &&
                                  bgmSource.isPlaying && AudioSettings.dspTime >= scheduledStartDspTime;
-    public double PlaybackSongTime => AudioSettings.dspTime - scheduledStartDspTime;
+    public bool IsPlaybackPaused => playbackPaused;
+    public double PlaybackSongTime =>
+        (playbackPaused ? pauseStartedDspTime : AudioSettings.dspTime) - scheduledStartDspTime;
+    public bool HasSongEnded
+    {
+        get
+        {
+            if (bgmSource == null || bgmSource.clip == null || scheduledStartDspTime <= 0d)
+            {
+                return false;
+            }
+
+            double playbackSpeed = Mathf.Max(0.01f, Mathf.Abs(bgmSource.pitch));
+            double scheduledDuration = bgmSource.clip.length / playbackSpeed;
+            return PlaybackSongTime >= scheduledDuration;
+        }
+    }
 
     private void Start()
     {
@@ -39,7 +58,7 @@ public sealed class PeckBeatRhythmManager : MonoBehaviour
 
     private void Update()
     {
-        if (bgmSource != null)
+        if (bgmSource != null && !playbackPaused)
         {
             songTime = AudioSettings.dspTime - scheduledStartDspTime + inputTimingOffset;
         }
@@ -60,6 +79,33 @@ public sealed class PeckBeatRhythmManager : MonoBehaviour
             secondaryCount++;
             Debug.Log($"[ActionB] songTime: {songTime:F3}", this);
         }
+    }
+
+    public bool PausePlayback()
+    {
+        if (playbackPaused || !IsSongPlaying || bgmSource == null)
+        {
+            return false;
+        }
+
+        pauseStartedDspTime = AudioSettings.dspTime;
+        playbackPaused = true;
+        bgmSource.Pause();
+        return true;
+    }
+
+    public void ResumePlayback()
+    {
+        if (!playbackPaused)
+        {
+            return;
+        }
+
+        double pauseDuration = Math.Max(0d, AudioSettings.dspTime - pauseStartedDspTime);
+        scheduledStartDspTime += pauseDuration;
+        playbackPaused = false;
+        pauseStartedDspTime = 0d;
+        bgmSource?.UnPause();
     }
 
 }

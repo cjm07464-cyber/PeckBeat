@@ -23,6 +23,9 @@ public sealed class Stage01IntroGuideUI : MonoBehaviour
     [SerializeField] private Sprite chickSmallSprite;
     [SerializeField] private Sprite cuckooSmallSprite;
 
+    [Header("Button Image Scale")]
+    [SerializeField] private float keyboardButtonScaleMultiplier = 0.7f;
+
     [Header("Texts")]
     [SerializeField] private TMP_Text feedText;
     [SerializeField] private TMP_Text peckText;
@@ -39,12 +42,24 @@ public sealed class Stage01IntroGuideUI : MonoBehaviour
     [SerializeField] private float hideMoveDistanceY = 300f;
 
     private Vector2 initialAnchoredPosition;
+    private Vector3 originalFeedKeyScale = Vector3.one;
+    private Vector3 originalPeckKeyScale = Vector3.one;
 
     private void Awake()
     {
         if (rootPanel != null)
         {
             initialAnchoredPosition = rootPanel.anchoredPosition;
+        }
+
+        if (feedKeyImage != null)
+        {
+            originalFeedKeyScale = feedKeyImage.rectTransform.localScale;
+        }
+
+        if (peckKeyImage != null)
+        {
+            originalPeckKeyScale = peckKeyImage.rectTransform.localScale;
         }
 
         ApplyInputSprites();
@@ -63,6 +78,22 @@ public sealed class Stage01IntroGuideUI : MonoBehaviour
         bool useGamepad = TitleSession.SelectedInputMode == TitleSession.InputMode.Xbox;
         ApplySprite(feedKeyImage, useGamepad ? gamepadASprite : keyboardDSprite);
         ApplySprite(peckKeyImage, useGamepad ? gamepadBSprite : keyboardJSprite);
+        ApplyButtonImageScale(useGamepad);
+    }
+
+    private void ApplyButtonImageScale(bool useGamepad)
+    {
+        float multiplier = useGamepad ? 1f : Mathf.Max(0f, keyboardButtonScaleMultiplier);
+
+        if (feedKeyImage != null)
+        {
+            feedKeyImage.rectTransform.localScale = originalFeedKeyScale * multiplier;
+        }
+
+        if (peckKeyImage != null)
+        {
+            peckKeyImage.rectTransform.localScale = originalPeckKeyScale * multiplier;
+        }
     }
 
     private void ApplyBirdSprites()
@@ -76,10 +107,10 @@ public sealed class Stage01IntroGuideUI : MonoBehaviour
         bool useEnglish = TitleSession.SelectedLanguage == TitleSession.Language.English;
         TMP_FontAsset selectedFont = useEnglish ? englishTmpFontAsset : koreanTmpFontAsset;
 
-        ApplyText(feedText, useEnglish ? "Feed the chick" : "아기새 먹이주기", selectedFont);
+        ApplyText(feedText, useEnglish ? "Press once to feed!" : "한 번 눌러 먹이주기!", selectedFont);
         ApplyText(
             peckText,
-            useEnglish ? "Peck the cuckoo (Press twice!)" : "뻐꾸기 쪼기 (2번 눌러!)",
+            useEnglish ? "Press twice to chase away!" : "두 번 눌러 쫓아내기!",
             selectedFont);
     }
 

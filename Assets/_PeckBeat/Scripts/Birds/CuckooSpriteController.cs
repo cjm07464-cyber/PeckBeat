@@ -8,6 +8,8 @@ public sealed class CuckooSpriteController : MonoBehaviour
         Idle,
         Fed,
         Exit,
+        WrongExit,
+        PartialHitExit,
         Hit1,
         Hit2
     }
@@ -18,6 +20,8 @@ public sealed class CuckooSpriteController : MonoBehaviour
     [SerializeField] private SpritePose idle = new SpritePose();
     [SerializeField] private SpritePose fed = new SpritePose();
     [SerializeField] private SpritePose exit = new SpritePose();
+    [SerializeField] private SpritePose wrongExit = new SpritePose();
+    [SerializeField] private SpritePose partialHitExit = new SpritePose();
     [SerializeField] private SpritePose hit1 = new SpritePose();
     [SerializeField] private SpritePose hit2 = new SpritePose();
 
@@ -29,11 +33,19 @@ public sealed class CuckooSpriteController : MonoBehaviour
     [Min(0.01f)] [SerializeField] private float fallDistance = 7f;
     [Range(0f, 6f)] [SerializeField] private float rotationTurns = 2.5f;
 
+    [Header("Hit2 Perfect Knockaway")]
+    [SerializeField] private Vector2 perfectKnockawayDirection = Vector2.one;
+    [Min(0.01f)] [SerializeField] private float perfectKnockawayDistance = 12f;
+    [Min(0.01f)] [SerializeField] private float perfectKnockawayDuration = 0.4f;
+    [SerializeField] private float perfectKnockawaySpinDegreesPerSecond = 720f;
+
     private bool knockingAway;
+    private bool perfectKnockawayActive;
     private bool descending;
     private double knockawayStartTime;
     private Vector3 knockawayStartPosition;
     private Tween rotationTween;
+    private Coroutine perfectKnockawayRoutine;
 
     public State CurrentState { get; private set; }
 
@@ -50,6 +62,7 @@ public sealed class CuckooSpriteController : MonoBehaviour
         }
 
         descending = false;
+        perfectKnockawayActive = false;
         knockawayStartPosition = transform.position;
         knockawayStartTime = AudioSettings.dspTime;
         knockingAway = true;
@@ -65,9 +78,40 @@ public sealed class CuckooSpriteController : MonoBehaviour
         }
     }
 
+    public void PlayPerfectKnockaway()
+    {
+        if (knockingAway || CurrentState != State.Hit2)
+        {
+            return;
+        }
+
+        descending = false;
+        perfectKnockawayActive = true;
+        knockingAway = true;
+        perfectKnockawayRoutine = StartCoroutine(PerfectKnockawayRoutine());
+    }
+
+    public void PlayPartialHitExit()
+    {
+        SetState(State.PartialHitExit);
+    }
+
+    public void SetVisualVisible(bool visible)
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = visible;
+        }
+    }
+
     private void Update()
     {
         if (!knockingAway)
+        {
+            return;
+        }
+
+        if (perfectKnockawayActive)
         {
             return;
         }
@@ -94,8 +138,46 @@ public sealed class CuckooSpriteController : MonoBehaviour
 
         if (t >= 1f)
         {
-            Destroy(gameObject);
+            CompleteKnockaway();
         }
+    }
+
+    private System.Collections.IEnumerator PerfectKnockawayRoutine()
+    {
+        float duration = Mathf.Max(0.01f, perfectKnockawayDuration);
+        Vector2 direction = perfectKnockawayDirection.sqrMagnitude > 0.0001f
+            ? perfectKnockawayDirection.normalized
+            : Vector2.one.normalized;
+        Vector3 start = transform.position;
+        Vector3 end = start + new Vector3(direction.x, direction.y, 0f) *
+            Mathf.Max(0f, perfectKnockawayDistance);
+        Quaternion startRotation = transform.rotation;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            transform.position = Vector3.LerpUnclamped(start, end, t);
+            float spin = perfectKnockawaySpinDegreesPerSecond * elapsed;
+            transform.rotation = startRotation * Quaternion.Euler(0f, 0f, spin);
+            yield return null;
+        }
+
+        transform.position = end;
+        transform.rotation = startRotation * Quaternion.Euler(
+            0f,
+            0f,
+            perfectKnockawaySpinDegreesPerSecond * duration);
+        perfectKnockawayRoutine = null;
+        CompleteKnockaway();
+    }
+
+    private void CompleteKnockaway()
+    {
+        knockingAway = false;
+        perfectKnockawayActive = false;
+        Destroy(gameObject);
     }
 
     public void SetState(State state)
@@ -111,6 +193,10 @@ public sealed class CuckooSpriteController : MonoBehaviour
         {
             State.Fed => fed,
             State.Exit => exit,
+            State.WrongExit => wrongExit != null && wrongExit.sprite != null ? wrongExit : exit,
+            State.PartialHitExit => partialHitExit != null && partialHitExit.sprite != null
+                ? partialHitExit
+                : exit,
             State.Hit1 => hit1,
             State.Hit2 => hit2,
             _ => idle
@@ -121,6 +207,7 @@ public sealed class CuckooSpriteController : MonoBehaviour
 
     private void OnDestroy()
     {
+        perfectKnockawayRoutine = null;
         rotationTween?.Kill();
         rotationTween = null;
     }

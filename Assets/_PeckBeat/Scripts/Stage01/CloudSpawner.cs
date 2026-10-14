@@ -8,6 +8,8 @@ public sealed class CloudSpawner : MonoBehaviour
     [SerializeField] private GameObject cloudPrefab;
     [SerializeField] private Sprite[] cloudSprites = new Sprite[2];
     [SerializeField] private Transform cloudContainer;
+    [Min(0.01f)] [SerializeField] private float testCloudScaleMultiplier = 1.6f;
+    [SerializeField] private bool logCloudScaleSelection;
 
     [Header("Lanes")]
     [SerializeField] private Transform[] spawnPoints = new Transform[2];
@@ -69,7 +71,27 @@ public sealed class CloudSpawner : MonoBehaviour
             return;
         }
 
-        visual.sprite = cloudSprites[Random.Range(0, cloudSprites.Length)];
+        Sprite selectedSprite = cloudSprites[Random.Range(0, cloudSprites.Length)];
+        visual.sprite = selectedSprite;
+
+        Vector3 baseScale = visual.transform.localScale;
+        float scaleMultiplier = IsTestCloudSprite(selectedSprite)
+            ? Mathf.Max(0.01f, testCloudScaleMultiplier)
+            : 1f;
+        visual.transform.localScale = new Vector3(
+            baseScale.x * scaleMultiplier,
+            baseScale.y * scaleMultiplier,
+            baseScale.z);
+
+        if (logCloudScaleSelection)
+        {
+            string spriteName = selectedSprite != null ? selectedSprite.name : "<null>";
+            Debug.Log(
+                $"[CloudSpawner] Sprite={spriteName}, " +
+                $"testMultiplier={testCloudScaleMultiplier:0.###}, " +
+                $"finalScale={visual.transform.localScale}",
+                cloud);
+        }
 
         float speedMin = Mathf.Max(0.01f, Mathf.Min(minSpeed, maxSpeed));
         float speedMax = Mathf.Max(speedMin, Mathf.Max(minSpeed, maxSpeed));
@@ -85,5 +107,11 @@ public sealed class CloudSpawner : MonoBehaviour
                 Destroy(cloud);
                 laneOccupied[lane] = false;
             });
+    }
+
+    private static bool IsTestCloudSprite(Sprite sprite)
+    {
+        return sprite != null &&
+               sprite.name.StartsWith("cloud-", System.StringComparison.OrdinalIgnoreCase);
     }
 }

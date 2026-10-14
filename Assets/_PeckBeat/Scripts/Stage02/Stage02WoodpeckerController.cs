@@ -4,6 +4,7 @@ using UnityEngine;
 public sealed class Stage02WoodpeckerController : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer spriteRenderer;
+    [SerializeField] private Stage02WoodpeckerIdleVisual idleVisual;
 
     [Header("Sprites")]
     [SerializeField] private Sprite idleSprite;
@@ -17,6 +18,7 @@ public sealed class Stage02WoodpeckerController : MonoBehaviour
     private double holdStrikeInterval;
     private double holdPeckEndTime;
     private int lastHoldStrike;
+    private bool holdCompositeVisualActive;
 
     private void Awake()
     {
@@ -30,6 +32,22 @@ public sealed class Stage02WoodpeckerController : MonoBehaviour
         peckRoutine = StartCoroutine(PeckThenIdle());
     }
 
+    public void PlayPerfectSmile()
+    {
+        if (idleVisual != null)
+        {
+            idleVisual.PlayPerfectSmile();
+        }
+    }
+
+    public void PlayMissPeckFace()
+    {
+        if (idleVisual != null)
+        {
+            idleVisual.PlayMissPeckFace();
+        }
+    }
+
     public void StartHoldPeck(double startSongTime, float beatInterval)
     {
         StopPeckRoutine();
@@ -37,12 +55,16 @@ public sealed class Stage02WoodpeckerController : MonoBehaviour
         holdStartSongTime = startSongTime;
         holdStrikeInterval = beatInterval * 0.125d;
         lastHoldStrike = -1;
+        holdCompositeVisualActive = false;
         ShowIdle();
+        idleVisual?.StartHoldRapidPeckVisual();
     }
 
     public void StopHoldPeck()
     {
         holding = false;
+        holdCompositeVisualActive = false;
+        idleVisual?.StopHoldRapidPeckVisual();
         ShowIdle();
     }
 
@@ -67,11 +89,16 @@ public sealed class Stage02WoodpeckerController : MonoBehaviour
             // Preserve an Idle gap even when the accepted first press is late.
             holdPeckEndTime = songTime + System.Math.Min(holdStrikeInterval * 0.5d,
                 (nextStrikeTime - songTime) * 0.5d);
-            ShowPeck();
+            ShowHoldPeck();
         }
         else if (songTime >= holdPeckEndTime)
         {
-            ShowIdle();
+            // A composite peck restores its own head parts after peckHeadDuration.
+            // Preserve the legacy Idle gap only for the full-sprite fallback.
+            if (!holdCompositeVisualActive)
+            {
+                ShowIdle();
+            }
         }
     }
 
@@ -94,7 +121,21 @@ public sealed class Stage02WoodpeckerController : MonoBehaviour
 
     private void ShowIdle()
     {
-        if (spriteRenderer != null && idleSprite != null)
+        bool splitIdleVisible = false;
+        if (idleVisual != null)
+        {
+            // Keep the split body visible during a hold. Only the three head
+            // parts are swapped by the hold peck visual.
+            splitIdleVisible = idleVisual.SetIdleVisible(true);
+        }
+
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+
+        spriteRenderer.enabled = !splitIdleVisible;
+        if (!splitIdleVisible && idleSprite != null)
         {
             spriteRenderer.sprite = idleSprite;
         }
@@ -102,9 +143,56 @@ public sealed class Stage02WoodpeckerController : MonoBehaviour
 
     private void ShowPeck()
     {
-        if (spriteRenderer != null && peckSprite != null)
+        if (idleVisual != null && idleVisual.PlayPeckHeadComposite())
+        {
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.enabled = false;
+            }
+
+            return;
+        }
+
+        ShowLegacyPeckFallback();
+    }
+
+    private void ShowHoldPeck()
+    {
+        if (idleVisual != null && idleVisual.PlayHoldPeckVisual())
+        {
+            holdCompositeVisualActive = true;
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.enabled = false;
+            }
+
+            return;
+        }
+
+        holdCompositeVisualActive = false;
+        ShowLegacyPeckFallback();
+    }
+
+    private void ShowLegacyPeckFallback()
+    {
+        if (idleVisual != null)
+        {
+            idleVisual.SetIdleVisible(false);
+        }
+
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+
+        spriteRenderer.enabled = true;
+        if (peckSprite != null)
         {
             spriteRenderer.sprite = peckSprite;
+        }
+        else if (idleSprite != null)
+        {
+            spriteRenderer.sprite = idleSprite;
         }
     }
 

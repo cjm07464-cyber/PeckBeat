@@ -47,17 +47,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChickSpriteController
   spriteRenderer: {fileID: 104250635496758119}
   idle:
-    sprite: {fileID: 3091222389628506298, guid: c05b2479164efbd4c87fe0eb62d4d427, type: 3}
+    sprite: {fileID: 1938966013992252911, guid: abb86457c2c1605429f9ddb587525e4d, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 0
   fed:
-    sprite: {fileID: 1693507802776087901, guid: c05b2479164efbd4c87fe0eb62d4d427, type: 3}
+    sprite: {fileID: -3438086458957922087, guid: a16c054e4ab54784fb7eb4746408ae05, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 0
   exit:
-    sprite: {fileID: 3091222389628506298, guid: c05b2479164efbd4c87fe0eb62d4d427, type: 3}
+    sprite: {fileID: 21300000, guid: 14fce2af214f54b48bad6f692d87fff8, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 1
+  failedExit:
+    sprite: {fileID: 1938966013992252911, guid: abb86457c2c1605429f9ddb587525e4d, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 1
@@ -142,13 +147,13 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -5
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: 4313ae942d8bcc643917ec40a78e510f, type: 3}
+  m_Sprite: {fileID: 1938966013992252911, guid: abb86457c2c1605429f9ddb587525e4d, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 7.35, y: 8.37}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0

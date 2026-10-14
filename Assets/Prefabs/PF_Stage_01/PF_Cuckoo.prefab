@@ -27,7 +27,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.26, y: 0.26, z: 1}
+  m_LocalScale: {x: 0.42, y: 0.42, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8078802126165520456}
@@ -47,27 +47,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CuckooSpriteController
   spriteRenderer: {fileID: 4734053946885409797}
   idle:
-    sprite: {fileID: 21300000, guid: 4dc6d3387797b8e46a027fb8d2642b1f, type: 3}
+    sprite: {fileID: 21300000, guid: 87940e1264ca12845a7bf74f5158456d, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 0
   fed:
-    sprite: {fileID: 21300000, guid: 10b16d2c0208ed54397bcf234249705d, type: 3}
+    sprite: {fileID: 21300000, guid: 943efcf038ce5f742be692afe39e9ea0, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 0
   exit:
-    sprite: {fileID: 21300000, guid: 4dc6d3387797b8e46a027fb8d2642b1f, type: 3}
+    sprite: {fileID: 21300000, guid: 87940e1264ca12845a7bf74f5158456d, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 1
+  wrongExit:
+    sprite: {fileID: 21300000, guid: 91bdb62754a522f4594623673c7ee0f0, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 1
+  partialHitExit:
+    sprite: {fileID: 21300000, guid: 16a17c2df089bdf4284826a7cdd34e0a, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 1
   hit1:
-    sprite: {fileID: -1290531771311240058, guid: 2c218493b3be77642a5c61f2b33a3699, type: 3}
+    sprite: {fileID: 21300000, guid: 96a1cd67f6542e74fa2169f1c03db5d4, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 0
   hit2:
-    sprite: {fileID: 21300000, guid: 60d7c060078f24f4e9a255ba43a0d915, type: 3}
+    sprite: {fileID: 21300000, guid: f247b24e22afb9e4780802e66fe045e6, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 1
@@ -77,6 +87,10 @@ MonoBehaviour:
   arcHeight: 7
   fallDistance: 7
   rotationTurns: 2.5
+  perfectKnockawayDirection: {x: 1, y: 1}
+  perfectKnockawayDistance: 14
+  perfectKnockawayDuration: 0.35
+  perfectKnockawaySpinDegreesPerSecond: 2160
 --- !u!1 &8919590662210913452
 GameObject:
   m_ObjectHideFlags: 0
@@ -158,13 +172,13 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -5
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: 4313ae942d8bcc643917ec40a78e510f, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 87940e1264ca12845a7bf74f5158456d, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 12.54, y: 12.54}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0

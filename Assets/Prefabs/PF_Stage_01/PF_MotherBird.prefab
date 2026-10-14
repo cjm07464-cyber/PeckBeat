@@ -53,7 +53,12 @@ MonoBehaviour:
     scale: {x: 1, y: 1}
     flipX: 0
   feed:
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: fee79fffd2f3eec4f9621e2312d227d9, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 0
+  feedSuccess:
+    sprite: {fileID: -2488552358981989314, guid: a95adddc6412d104dbaab9b1704c050d, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 0
@@ -62,8 +67,18 @@ MonoBehaviour:
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 0
+  peck1Success:
+    sprite: {fileID: 21300000, guid: 6f1afdbd29ebc4e448b4e51eb8ee7f9d, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 0
   peck2:
-    sprite: {fileID: 21300000, guid: 997cfe8f3f2e4c44fb972efb85e0537a, type: 3}
+    sprite: {fileID: -3013845398621274266, guid: 049eecc97172ed3438e2eaf16cd667f5, type: 3}
+    positionOffset: {x: 0, y: 0}
+    scale: {x: 1, y: 1}
+    flipX: 0
+  peck2Success:
+    sprite: {fileID: 21300000, guid: d2ff04dbb9210a14eb0a4c70c4efa1c9, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 0
@@ -73,10 +88,17 @@ MonoBehaviour:
     scale: {x: 1, y: 1}
     flipX: 0
   wrongPeck:
-    sprite: {fileID: 21300000, guid: 3c13a11aba8187143927d9b91f816520, type: 3}
+    sprite: {fileID: 7525562889768877996, guid: 0a85c4c9c061d194ca1793621bae8d12, type: 3}
     positionOffset: {x: 0, y: 0}
     scale: {x: 1, y: 1}
     flipX: 0
+  useSplitIdleVisual: 1
+  idleBodyRenderer: {fileID: 0}
+  idleEyeRenderer: {fileID: 0}
+  idleBeakWormRenderer: {fileID: 0}
+  idleBodySortingOrder: -3
+  idleFaceSortingOrder: -2
+  hideLegacyWormVisual: 1
   wormVisual: {fileID: 0}
   wormIdlePosition: {x: 0, y: 0}
   wormFeedPosition: {x: 0, y: 0}
@@ -85,6 +107,8 @@ MonoBehaviour:
   wormWrongFeedPosition: {x: 0, y: 0}
   wormWrongPeckPosition: {x: 0, y: 0}
   stateDuration: 0.2
+  overrideSortingOrderDuringFeedSuccess: 1
+  feedSuccessSortingOrder: -5
 --- !u!114 &6733621224922536806
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -220,15 +244,15 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -3
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: dbca145afa517874cbf9deb542314611, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 14.48, y: 10.86}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
 --- !u!1 &7190256413378291051
 GameObject:

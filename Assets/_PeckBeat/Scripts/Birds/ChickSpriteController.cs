@@ -6,7 +6,8 @@ public sealed class ChickSpriteController : MonoBehaviour
     {
         Idle,
         Fed,
-        Exit
+        Exit,
+        FailedExit
     }
 
     [SerializeField] private SpriteRenderer spriteRenderer;
@@ -15,12 +16,26 @@ public sealed class ChickSpriteController : MonoBehaviour
     [SerializeField] private SpritePose idle = new SpritePose();
     [SerializeField] private SpritePose fed = new SpritePose();
     [SerializeField] private SpritePose exit = new SpritePose();
+    [SerializeField] private SpritePose failedExit = new SpritePose();
 
     public State CurrentState { get; private set; }
+
+    private void OnEnable()
+    {
+        SetVisualVisible(true);
+    }
 
     private void Awake()
     {
         SetState(State.Idle);
+    }
+
+    public void SetVisualVisible(bool visible)
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = visible;
+        }
     }
 
     public void SetState(State state)
@@ -36,6 +51,7 @@ public sealed class ChickSpriteController : MonoBehaviour
         {
             State.Fed => fed,
             State.Exit => exit,
+            State.FailedExit => failedExit != null && failedExit.sprite != null ? failedExit : exit,
             _ => idle
         };
 
