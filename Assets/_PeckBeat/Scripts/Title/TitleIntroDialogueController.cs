@@ -77,7 +77,10 @@ public sealed class TitleIntroDialogueController : MonoBehaviour
     [SerializeField] private Sprite resultCheckSprite;
     [SerializeField] private Sprite resultCheckMouthOpenSprite;
     [SerializeField] private Sprite listeningSprite;
-    [Min(0f)] [SerializeField] private float listeningLineHoldDuration = 3f;
+    [SerializeField] private Sprite endingDeepBowSprite;
+    [Min(0f)] [SerializeField] private float listeningLineHoldDuration = 1.5f;
+    [Min(0f)] [SerializeField] private float endingBowHoldDuration = 1.5f;
+    [Min(0f)] [SerializeField] private float endingFadeOutDuration = 2f;
 
     [Header("Optional UI Sprites")]
     [SerializeField] private Sprite speechBubbleSprite;
@@ -116,6 +119,10 @@ public sealed class TitleIntroDialogueController : MonoBehaviour
     private bool suppressMouthAnimationForCurrentLine;
     private bool suppressConfirmInputForCurrentLine;
     private bool usePostStage02OutroInput;
+    private bool postStage02OutroCompleted;
+
+    public bool PostStage02OutroCompleted => postStage02OutroCompleted;
+    public float EndingFadeOutDuration => Mathf.Max(0f, endingFadeOutDuration);
 
     public void PrepareIntroBackgroundForTow()
     {
@@ -236,6 +243,7 @@ public sealed class TitleIntroDialogueController : MonoBehaviour
 
     public IEnumerator PlayPostStage02Outro()
     {
+        postStage02OutroCompleted = false;
         if (isPlaying)
         {
             yield break;
@@ -291,17 +299,24 @@ public sealed class TitleIntroDialogueController : MonoBehaviour
             listeningSprite,
             ratFrontSprite,
             nameof(listeningSprite));
+        Sprite endingDeepBow = ResolveOutroSprite(
+            endingDeepBowSprite,
+            ratFrontSprite,
+            nameof(endingDeepBowSprite));
         string[] lines = GetPostStage02OutroLines();
 
         for (int i = 0; i < lines.Length; i++)
         {
             bool resultCheckLine = i >= 2 && i <= 4;
             bool listeningLine = i == 7;
+            bool endingDeepBowLine = i == lines.Length - 1;
             Sprite closedSprite = resultCheckLine
                 ? resultClosed
-                : listeningLine ? listening : ratFrontSprite;
+                : listeningLine ? listening
+                : endingDeepBowLine ? endingDeepBow
+                : ratFrontSprite;
             Sprite openSprite = resultCheckLine ? resultOpen : ratMouthOpenSprite;
-            bool animateMouth = !listeningLine;
+            bool animateMouth = !listeningLine && !endingDeepBowLine;
             bool waitForNextLine = i < lines.Length - 1;
 
             yield return ShowPostStage02OutroLine(
@@ -313,13 +328,33 @@ public sealed class TitleIntroDialogueController : MonoBehaviour
                 listeningLine);
         }
 
-        SetRatSprite(ratFrontSprite);
+        SetRatSprite(endingDeepBow);
+        yield return WaitUnscaled(endingBowHoldDuration);
+
         SetChoiceVisible(false);
         SetMenuButtonVisible(false);
         KeepIntroBlackBackgroundVisible();
         introDialogueRootCanvasGroup.interactable = false;
         introDialogueRootCanvasGroup.blocksRaycasts = false;
         usePostStage02OutroInput = false;
+        postStage02OutroCompleted = true;
+        isPlaying = false;
+    }
+
+    public void PrepareForFullTitleRestart()
+    {
+        StopAllCoroutines();
+        StopMouthAnimation();
+        if (sfxSource != null)
+        {
+            sfxSource.Stop();
+        }
+
+        usePostStage02OutroInput = false;
+        suppressConfirmInputForCurrentLine = false;
+        suppressMouthAnimationForCurrentLine = false;
+        isTypingLine = false;
+        currentTypingLine = string.Empty;
         isPlaying = false;
     }
 
@@ -344,7 +379,9 @@ public sealed class TitleIntroDialogueController : MonoBehaviour
 
         if (addListeningHold)
         {
-            float holdDuration = Mathf.Max(0f, listeningLineHoldDuration);
+            // Older TitleScene serialization may still contain the former 3 second value.
+            // Keep the outro's listening beat capped at the new 1.5 second duration.
+            float holdDuration = Mathf.Min(Mathf.Max(0f, listeningLineHoldDuration), 1.5f);
             if (holdDuration > 0f)
             {
                 yield return new WaitForSecondsRealtime(holdDuration);

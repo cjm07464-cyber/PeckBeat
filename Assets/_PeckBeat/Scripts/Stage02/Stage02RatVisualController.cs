@@ -44,9 +44,11 @@ public sealed class Stage02RatVisualController : MonoBehaviour
     private float frameElapsed;
     private int sequenceIndex;
     private bool isRunning;
+    private Vector3 authoredRootScale;
 
     private void Awake()
     {
+        authoredRootScale = transform.localScale;
         ApplyIdleScale();
         ApplyStaticSprites();
     }
@@ -119,6 +121,13 @@ public sealed class Stage02RatVisualController : MonoBehaviour
         {
             idleRoot.SetActive(CanShowSplitIdle());
         }
+    }
+
+    public void SetTravelDirection(bool movingRight)
+    {
+        Vector3 scale = authoredRootScale;
+        scale.x = Mathf.Abs(authoredRootScale.x) * (movingRight ? 1f : -1f);
+        transform.localScale = scale;
     }
 
     private void ApplyStaticSprites()

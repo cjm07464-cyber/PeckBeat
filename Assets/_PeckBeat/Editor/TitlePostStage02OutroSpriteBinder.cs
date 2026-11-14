@@ -9,6 +9,7 @@ public static class TitlePostStage02OutroSpriteBinder
     private const string MenuPath = "PeckBeat/Title/Bind Post Stage02 Outro Sprites";
     private const string TitleScenePath = "Assets/Scenes/TitleScene.unity";
     private const string RatArtPath = "Assets/_PeckBeat/Art/Title/Rat";
+    private const string EndingArtPath = "Assets/_PeckBeat/Art/부리박자슬슬마무리";
 
     [MenuItem(MenuPath)]
     private static void BindSprites()
@@ -35,6 +36,11 @@ public static class TitlePostStage02OutroSpriteBinder
         AssignSpriteIfEmpty(serialized, "resultCheckSprite", "결과확인");
         AssignSpriteIfEmpty(serialized, "resultCheckMouthOpenSprite", "결과확인_입열기");
         AssignSpriteIfEmpty(serialized, "listeningSprite", "귀_기울이기");
+        AssignSpriteIfEmpty(
+            serialized,
+            "endingDeepBowSprite",
+            "쥐_엔딩_깊은인사",
+            EndingArtPath);
         bool changed = serialized.ApplyModifiedProperties();
 
         if (changed)
@@ -52,7 +58,8 @@ public static class TitlePostStage02OutroSpriteBinder
     private static void AssignSpriteIfEmpty(
         SerializedObject serialized,
         string propertyName,
-        string assetName)
+        string assetName,
+        string searchPath = RatArtPath)
     {
         SerializedProperty property = serialized.FindProperty(propertyName);
         if (property == null)
@@ -67,20 +74,20 @@ public static class TitlePostStage02OutroSpriteBinder
             return;
         }
 
-        Sprite sprite = FindSpriteByExactName(assetName);
+        Sprite sprite = FindSpriteByExactName(assetName, searchPath);
         if (sprite == null)
         {
             Debug.LogWarning(
-                $"[TitlePostStage02OutroSpriteBinder] Sprite '{assetName}' was not found under {RatArtPath}.");
+                $"[TitlePostStage02OutroSpriteBinder] Sprite '{assetName}' was not found under {searchPath}.");
             return;
         }
 
         property.objectReferenceValue = sprite;
     }
 
-    private static Sprite FindSpriteByExactName(string assetName)
+    private static Sprite FindSpriteByExactName(string assetName, string searchPath)
     {
-        string[] guids = AssetDatabase.FindAssets($"{assetName} t:Sprite", new[] { RatArtPath });
+        string[] guids = AssetDatabase.FindAssets($"{assetName} t:Sprite", new[] { searchPath });
         foreach (string guid in guids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);

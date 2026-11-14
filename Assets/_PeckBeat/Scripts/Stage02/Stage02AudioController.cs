@@ -64,8 +64,19 @@ public sealed class Stage02AudioController : MonoBehaviour
         PlaySfx(twoHitFirstBreakSfx, twoHitFirstBreakVolume);
     public void PlayHoldBreak() => PlaySfx(holdRapidBreakSfx, holdRapidBreakVolume);
     public void PlayWhistleShort() => PlaySfx(whistleShortSfx, whistleShortVolume);
+    public float GetWhistleShortDuration() => whistleShortSfx != null ? whistleShortSfx.length : 0f;
     public void PlayWhistleLong() => PlaySfx(whistleLongSfx, whistleLongVolume);
-    public float GetWhistleLongDuration() => whistleLongSfx != null ? whistleLongSfx.length : 0f;
+    public float GetWhistleLongDuration()
+    {
+        if (whistleLongSfx == null)
+        {
+            return 0f;
+        }
+
+        float playbackSpeed = sfxSource != null ? Mathf.Abs(sfxSource.pitch) : 1f;
+        return whistleLongSfx.length / Mathf.Max(0.01f, playbackSpeed);
+    }
+
     public void PlayPerfect() => PlaySfx(perfectSfx, perfectVolume);
 
     private void PlaySfx(AudioClip clip)

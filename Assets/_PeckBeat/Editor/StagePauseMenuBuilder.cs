@@ -164,6 +164,7 @@ public static class StagePauseMenuBuilder
         SetReferenceIfEmpty(serialized, "pauseCanvas", canvas);
         SetReferenceIfEmpty(serialized, "pauseCanvasGroup", canvasGroup);
         SetReferenceIfEmpty(serialized, "curtainRoot", curtainRoot);
+        SetReferenceIfEmpty(serialized, "curtainPanel", curtainPanel);
         SetReferenceIfEmpty(serialized, "menuRoot", menuRoot.gameObject);
         SetReferenceIfEmpty(serialized, "countdownRoot", countdownRoot.gameObject);
         SetReferenceIfEmpty(serialized, "pauseRatImage", pauseRatImage);

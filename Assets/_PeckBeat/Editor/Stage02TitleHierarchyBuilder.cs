@@ -8,6 +8,12 @@ using UnityEngine.UI;
 public static class Stage02TitleHierarchyBuilder
 {
     private const string TitleScenePath = "Assets/Scenes/TitleScene.unity";
+    private const string OneHitLogPath =
+        "Assets/_PeckBeat/Art/Stage_02/Player/Objects/일반통나무.png";
+    private const string TwoHitLogPath =
+        "Assets/_PeckBeat/Art/Stage_02/Player/Objects/2타통나무.png";
+    private const string HoldLogPath =
+        "Assets/_PeckBeat/Art/Stage_02/Player/Objects/홀드_긴통나무_완전옆면.png";
 
     [MenuItem("PeckBeat/Title/Build Stage02 Title UI")]
     private static void BuildStage02TitleUI()
@@ -35,17 +41,29 @@ public static class Stage02TitleHierarchyBuilder
         RectTransform background = GetOrCreateRect(stage02Title, "Stage02Background", out bool backgroundCreated);
         RectTransform logo = GetOrCreateRect(stage02Title, "Stage02Logo", out bool logoCreated);
         RectTransform guideRoot = GetOrCreateRect(stage02Title, "Stage02GuideRoot", out bool guideCreated);
+        RectTransform guidePanel = GetOrCreateRect(guideRoot, "GuidePanelImage", out bool guidePanelCreated);
         RectTransform guideTitle = GetOrCreateRect(guideRoot, "GuideTitleText", out bool guideTitleCreated);
         RectTransform leftGuide = GetOrCreateRect(guideRoot, "LeftGuide", out bool leftCreated);
+        RectTransform leftTarget = GetOrCreateRect(leftGuide, "LogImage", out bool leftTargetCreated);
         RectTransform leftButton = GetOrCreateRect(leftGuide, "LeftButtonImage", out bool leftButtonCreated);
         RectTransform leftText = GetOrCreateRect(leftGuide, "LeftGuideText", out bool leftTextCreated);
+        RectTransform middleGuide = GetOrCreateRect(guideRoot, "MiddleGuide", out bool middleCreated);
+        RectTransform middleTarget = GetOrCreateRect(middleGuide, "LogImage", out bool middleTargetCreated);
+        RectTransform middleButton = GetOrCreateRect(middleGuide, "MiddleButtonImage", out bool middleButtonCreated);
+        RectTransform middleText = GetOrCreateRect(middleGuide, "MiddleGuideText", out bool middleTextCreated);
         RectTransform rightGuide = GetOrCreateRect(guideRoot, "RightGuide", out bool rightCreated);
+        RectTransform rightTarget = GetOrCreateRect(rightGuide, "LogImage", out bool rightTargetCreated);
         RectTransform rightButton = GetOrCreateRect(rightGuide, "RightButtonImage", out bool rightButtonCreated);
         RectTransform rightText = GetOrCreateRect(rightGuide, "RightGuideText", out bool rightTextCreated);
+        RectTransform startPrompt = GetOrCreateRect(guideRoot, "StartPromptText", out bool promptCreated);
+        RectTransform holdProgress = GetOrCreateRect(startPrompt, "StartHoldProgressImage", out bool progressCreated);
 
-        if (background == null || logo == null || guideRoot == null || guideTitle == null
-            || leftGuide == null || leftButton == null || leftText == null
-            || rightGuide == null || rightButton == null || rightText == null)
+        if (background == null || logo == null || guideRoot == null || guidePanel == null
+            || guideTitle == null || leftGuide == null || leftTarget == null
+            || leftButton == null || leftText == null || middleGuide == null
+            || middleTarget == null || middleButton == null || middleText == null
+            || rightGuide == null || rightTarget == null || rightButton == null
+            || rightText == null || startPrompt == null || holdProgress == null)
         {
             Debug.LogWarning("[Stage02TitleBuilder] An existing object has an incompatible non-UI Transform.");
             return;
@@ -69,7 +87,22 @@ public static class Stage02TitleHierarchyBuilder
 
         if (guideCreated)
         {
-            SetRect(guideRoot, new Vector2(0f, -245f), new Vector2(1500f, 220f));
+            SetRect(guideRoot, new Vector2(0f, -180f), new Vector2(1580f, 540f));
+        }
+        else
+        {
+            MigrateOldDefaultRect(
+                guideRoot,
+                new Vector2(0f, -245f),
+                new Vector2(1500f, 220f),
+                new Vector2(0f, -180f),
+                new Vector2(1580f, 540f));
+        }
+
+        if (guidePanelCreated)
+        {
+            SetStretch(guidePanel);
+            guidePanel.SetAsFirstSibling();
         }
 
         if (guideTitleCreated)
@@ -79,41 +112,130 @@ public static class Stage02TitleHierarchyBuilder
 
         if (leftCreated)
         {
-            SetRect(leftGuide, new Vector2(-350f, -20f), new Vector2(650f, 130f));
+            SetRect(leftGuide, new Vector2(-510f, -25f), new Vector2(480f, 300f));
+        }
+        else
+        {
+            MigrateOldDefaultRect(
+                leftGuide,
+                new Vector2(-350f, -20f),
+                new Vector2(650f, 130f),
+                new Vector2(-510f, -25f),
+                new Vector2(480f, 300f));
+        }
+
+        if (middleCreated)
+        {
+            SetRect(middleGuide, new Vector2(0f, -25f), new Vector2(480f, 300f));
         }
 
         if (rightCreated)
         {
-            SetRect(rightGuide, new Vector2(350f, -20f), new Vector2(650f, 130f));
+            SetRect(rightGuide, new Vector2(510f, -25f), new Vector2(480f, 300f));
+        }
+        else
+        {
+            MigrateOldDefaultRect(
+                rightGuide,
+                new Vector2(350f, -20f),
+                new Vector2(650f, 130f),
+                new Vector2(510f, -25f),
+                new Vector2(480f, 300f));
         }
 
         if (leftButtonCreated)
         {
-            SetRect(leftButton, new Vector2(-245f, 0f), new Vector2(96f, 96f));
+            SetRect(leftButton, new Vector2(-140f, -75f), new Vector2(88f, 88f));
+        }
+        else
+        {
+            MigrateOldDefaultRect(leftButton, new Vector2(-245f, 0f), new Vector2(96f, 96f),
+                new Vector2(-140f, -75f), new Vector2(88f, 88f));
+        }
+
+        if (middleButtonCreated)
+        {
+            SetRect(middleButton, new Vector2(-140f, -75f), new Vector2(88f, 88f));
         }
 
         if (rightButtonCreated)
         {
-            SetRect(rightButton, new Vector2(-245f, 0f), new Vector2(96f, 96f));
+            SetRect(rightButton, new Vector2(-140f, -75f), new Vector2(88f, 88f));
+        }
+        else
+        {
+            MigrateOldDefaultRect(rightButton, new Vector2(-245f, 0f), new Vector2(96f, 96f),
+                new Vector2(-140f, -75f), new Vector2(88f, 88f));
         }
 
         if (leftTextCreated)
         {
-            SetRect(leftText, new Vector2(70f, 0f), new Vector2(500f, 110f));
+            SetRect(leftText, new Vector2(70f, -75f), new Vector2(330f, 110f));
+        }
+        else
+        {
+            MigrateOldDefaultRect(leftText, new Vector2(70f, 0f), new Vector2(500f, 110f),
+                new Vector2(70f, -75f), new Vector2(330f, 110f));
+        }
+
+        if (middleTextCreated)
+        {
+            SetRect(middleText, new Vector2(70f, -75f), new Vector2(330f, 110f));
         }
 
         if (rightTextCreated)
         {
-            SetRect(rightText, new Vector2(70f, 0f), new Vector2(500f, 110f));
+            SetRect(rightText, new Vector2(70f, -75f), new Vector2(330f, 110f));
+        }
+        else
+        {
+            MigrateOldDefaultRect(rightText, new Vector2(70f, 0f), new Vector2(500f, 110f),
+                new Vector2(70f, -75f), new Vector2(330f, 110f));
+        }
+
+        if (leftTargetCreated) SetRect(leftTarget, new Vector2(0f, 65f), new Vector2(330f, 150f));
+        if (middleTargetCreated) SetRect(middleTarget, new Vector2(0f, 65f), new Vector2(330f, 150f));
+        if (rightTargetCreated) SetRect(rightTarget, new Vector2(0f, 65f), new Vector2(330f, 150f));
+        if (promptCreated)
+        {
+            SetRect(startPrompt, new Vector2(0f, -215f), new Vector2(760f, 70f));
+        }
+
+        if (progressCreated)
+        {
+            SetRect(holdProgress, new Vector2(420f, 0f), new Vector2(54f, 54f));
         }
 
         Image backgroundImage = EnsureImage(background.gameObject);
         Image logoImage = EnsureImage(logo.gameObject);
+        Image guidePanelImage = EnsureImage(guidePanel.gameObject);
+        Image leftTargetImage = EnsureImage(leftTarget.gameObject);
         Image leftButtonImage = EnsureImage(leftButton.gameObject);
+        Image middleTargetImage = EnsureImage(middleTarget.gameObject);
+        Image middleButtonImage = EnsureImage(middleButton.gameObject);
+        Image rightTargetImage = EnsureImage(rightTarget.gameObject);
         Image rightButtonImage = EnsureImage(rightButton.gameObject);
+        Image progressImage = EnsureImage(holdProgress.gameObject);
         TMP_Text guideTitleText = EnsureText(guideTitle.gameObject, "게임 방법", 38f);
-        TMP_Text leftGuideText = EnsureText(leftText.gameObject, "박자에 맞춰 쪼기!", 38f);
+        TMP_Text leftGuideText = EnsureText(leftText.gameObject, "박자에 맞춰 한 번!", 32f);
+        TMP_Text middleGuideText = EnsureText(middleText.gameObject, "박자에 맞춰 두 번!", 32f);
         TMP_Text rightGuideText = EnsureText(rightText.gameObject, "길게 눌러 깎기!", 38f);
+        TMP_Text startPromptText = EnsureText(startPrompt.gameObject, "꾹 눌러서 시작!", 36f);
+
+        if (guideRoot.GetComponent<CanvasGroup>() == null)
+        {
+            Undo.AddComponent<CanvasGroup>(guideRoot.gameObject);
+        }
+
+        if (progressCreated)
+        {
+            progressImage.type = Image.Type.Filled;
+            progressImage.fillMethod = Image.FillMethod.Radial360;
+            progressImage.fillOrigin = (int)Image.Origin360.Top;
+            progressImage.fillClockwise = true;
+            progressImage.fillAmount = 0f;
+            progressImage.color = Color.white;
+        }
 
         if (stage02Title.GetComponent<CanvasGroup>() == null)
         {
@@ -129,12 +251,33 @@ public static class Stage02TitleHierarchyBuilder
         Undo.RecordObject(guide, "Connect Stage02 Title Guide UI");
         SerializedObject serializedGuide = new SerializedObject(guide);
         SetObjectReferenceIfEmpty(serializedGuide, "guideRoot", guideRoot.gameObject);
+        SetObjectReferenceIfEmpty(serializedGuide, "guidePanelImage", guidePanelImage);
+        SetObjectReferenceIfEmpty(serializedGuide, "guideCanvasGroup", guideRoot.GetComponent<CanvasGroup>());
         SetObjectReferenceIfEmpty(serializedGuide, "guideTitleText", guideTitleText);
+        SetObjectReferenceIfEmpty(serializedGuide, "leftTargetImage", leftTargetImage);
         SetObjectReferenceIfEmpty(serializedGuide, "leftButtonImage", leftButtonImage);
         SetObjectReferenceIfEmpty(serializedGuide, "leftGuideText", leftGuideText);
+        SetObjectReferenceIfEmpty(serializedGuide, "middleTargetImage", middleTargetImage);
+        SetObjectReferenceIfEmpty(serializedGuide, "middleButtonImage", middleButtonImage);
+        SetObjectReferenceIfEmpty(serializedGuide, "middleGuideText", middleGuideText);
+        SetObjectReferenceIfEmpty(serializedGuide, "rightTargetImage", rightTargetImage);
         SetObjectReferenceIfEmpty(serializedGuide, "rightButtonImage", rightButtonImage);
         SetObjectReferenceIfEmpty(serializedGuide, "rightGuideText", rightGuideText);
-        CopyStage01GuideAssets(scene, serializedGuide);
+        SetObjectReferenceIfEmpty(serializedGuide, "startPromptText", startPromptText);
+        SetObjectReferenceIfEmpty(serializedGuide, "startHoldProgressImage", progressImage);
+        SetObjectReferenceIfEmpty(
+            serializedGuide,
+            "oneHitLogSprite",
+            AssetDatabase.LoadAssetAtPath<Sprite>(OneHitLogPath));
+        SetObjectReferenceIfEmpty(
+            serializedGuide,
+            "twoHitLogSprite",
+            AssetDatabase.LoadAssetAtPath<Sprite>(TwoHitLogPath));
+        SetObjectReferenceIfEmpty(
+            serializedGuide,
+            "holdLogSprite",
+            AssetDatabase.LoadAssetAtPath<Sprite>(HoldLogPath));
+        CopyStage01GuideAssets(scene, serializedGuide, guidePanelImage, progressImage);
         serializedGuide.ApplyModifiedProperties();
 
         TitleManager titleManager = FindSceneComponent<TitleManager>(scene);
@@ -254,6 +397,22 @@ public static class Stage02TitleHierarchyBuilder
         rect.localRotation = Quaternion.identity;
     }
 
+    private static void MigrateOldDefaultRect(
+        RectTransform rect,
+        Vector2 oldPosition,
+        Vector2 oldSize,
+        Vector2 newPosition,
+        Vector2 newSize)
+    {
+        if (rect == null || Vector2.Distance(rect.anchoredPosition, oldPosition) > 0.01f
+            || Vector2.Distance(rect.sizeDelta, oldSize) > 0.01f)
+        {
+            return;
+        }
+
+        SetRect(rect, newPosition, newSize);
+    }
+
     private static Image EnsureImage(GameObject target)
     {
         Image image = target.GetComponent<Image>();
@@ -286,7 +445,11 @@ public static class Stage02TitleHierarchyBuilder
         return text;
     }
 
-    private static void CopyStage01GuideAssets(Scene scene, SerializedObject destination)
+    private static void CopyStage01GuideAssets(
+        Scene scene,
+        SerializedObject destination,
+        Image destinationPanel,
+        Image destinationProgress)
     {
         Stage01TitleGuideUI sourceGuide = FindSceneComponent<Stage01TitleGuideUI>(scene);
         if (sourceGuide == null)
@@ -301,6 +464,32 @@ public static class Stage02TitleHierarchyBuilder
         CopyObjectReferenceIfEmpty(source, "gamepadBButtonSprite", destination, "gamepadBButtonSprite");
         CopyObjectReferenceIfEmpty(source, "koreanTmpFontAsset", destination, "koreanTmpFontAsset");
         CopyObjectReferenceIfEmpty(source, "englishTmpFontAsset", destination, "englishTmpFontAsset");
+        CopyImageStyleIfEmpty(source, "guidePanelImage", destinationPanel);
+        CopyImageStyleIfEmpty(source, "startHoldProgressImage", destinationProgress);
+    }
+
+    private static void CopyImageStyleIfEmpty(
+        SerializedObject source,
+        string sourcePropertyName,
+        Image destination)
+    {
+        Image sourceImage = source.FindProperty(sourcePropertyName)?.objectReferenceValue as Image;
+        if (sourceImage == null || destination == null)
+        {
+            return;
+        }
+
+        Undo.RecordObject(destination, $"Copy {sourcePropertyName} Style");
+        if (destination.sprite == null)
+        {
+            destination.sprite = sourceImage.sprite;
+        }
+
+        if (destination.sprite != null)
+        {
+            destination.color = sourceImage.color;
+            destination.preserveAspect = sourceImage.preserveAspect;
+        }
     }
 
     private static void CopyObjectReferenceIfEmpty(

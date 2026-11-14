@@ -16,6 +16,7 @@ public sealed class StagePauseMenuController : MonoBehaviour
     [SerializeField] private Canvas pauseCanvas;
     [SerializeField] private CanvasGroup pauseCanvasGroup;
     [SerializeField] private RectTransform curtainRoot;
+    [SerializeField] private RectTransform curtainPanel;
     [SerializeField] private GameObject menuRoot;
     [SerializeField] private GameObject countdownRoot;
     [SerializeField] private Image pauseRatImage;
@@ -55,6 +56,11 @@ public sealed class StagePauseMenuController : MonoBehaviour
     [Min(0f)] [SerializeField] private float fadeOutDuration = 0.6f;
     [SerializeField] private float curtainHiddenOffsetY = 1200f;
 
+    [Header("Curtain Layout")]
+    [Min(0f)] [SerializeField] private float curtainExtraHeight = 300f;
+    [SerializeField] private float curtainDownOffset = 80f;
+    [Min(0f)] [SerializeField] private float curtainHideMargin = 100f;
+
     [Header("Focus Layout")]
     [SerializeField] private float continueFocusX = -340f;
     [SerializeField] private float restartFocusX;
@@ -63,8 +69,11 @@ public sealed class StagePauseMenuController : MonoBehaviour
 
     private PeckBeatRhythmManager rhythmManager;
     private PeckBeatInput gameplayInput;
+    private Vector2 curtainBaseShownPosition;
     private Vector2 curtainShownPosition;
     private Vector2 curtainHiddenPosition;
+    private Vector2 curtainPanelBaseSizeDelta;
+    private bool curtainLayoutInitialized;
     private bool gameplayInputWasEnabled;
     private bool isPaused;
     private bool transitionRunning;
@@ -73,16 +82,27 @@ public sealed class StagePauseMenuController : MonoBehaviour
     private bool warnedMissingEnglishFont;
     private int selectionIndex;
 
+    public bool IsPaused => isPaused;
+    public static bool IsGameplayInputBlocked { get; private set; }
+
+    public static void ClearGlobalInputBlockForSceneChange()
+    {
+        IsGameplayInputBlocked = false;
+    }
+
     private void Awake()
     {
+        IsGameplayInputBlocked = false;
         rhythmManager = Object.FindFirstObjectByType<PeckBeatRhythmManager>(FindObjectsInactive.Include);
         gameplayInput = Object.FindFirstObjectByType<PeckBeatInput>(FindObjectsInactive.Include);
 
         if (curtainRoot != null)
         {
-            curtainShownPosition = curtainRoot.anchoredPosition;
-            curtainHiddenPosition = curtainShownPosition + Vector2.up * curtainHiddenOffsetY;
+            ResolveCurtainPanel();
+            InitializeCurtainLayout();
+            RefreshCurtainPositions();
             curtainRoot.anchoredPosition = curtainHiddenPosition;
+            curtainRoot.gameObject.SetActive(false);
         }
 
         ApplyAssignedAssets();
@@ -159,9 +179,11 @@ public sealed class StagePauseMenuController : MonoBehaviour
     private IEnumerator EnterPauseRoutine()
     {
         transitionRunning = true;
+        IsGameplayInputBlocked = true;
 
         if (rhythmManager == null || !rhythmManager.PausePlayback())
         {
+            IsGameplayInputBlocked = false;
             transitionRunning = false;
             yield break;
         }
@@ -175,6 +197,7 @@ public sealed class StagePauseMenuController : MonoBehaviour
 
         Time.timeScale = 0f;
         ShowPauseCanvas();
+        PrepareCurtainForPause();
         ApplyLanguageAndFont();
         selectionIndex = ContinueIndex;
         RefreshFocusPosition();
@@ -185,11 +208,6 @@ public sealed class StagePauseMenuController : MonoBehaviour
         if (fadeOverlay != null)
         {
             fadeOverlay.gameObject.SetActive(false);
-        }
-
-        if (curtainRoot != null)
-        {
-            curtainRoot.anchoredPosition = curtainHiddenPosition;
         }
 
         PlayUiSfx(pauseCurtainSfx);
@@ -209,7 +227,14 @@ public sealed class StagePauseMenuController : MonoBehaviour
         SetActive(menuRoot, false);
         PlayUiSfx(pauseCurtainSfx);
         yield return SlideCurtain(curtainShownPosition, curtainHiddenPosition);
+        if (curtainRoot != null)
+        {
+            curtainRoot.gameObject.SetActive(false);
+        }
+
         yield return PlayCountdownRoutine();
+        yield return WaitForGameplayButtonsReleased();
+        yield return null;
 
         rhythmManager?.ResumePlayback();
         if (gameplayInput != null && gameplayInputWasEnabled)
@@ -221,6 +246,7 @@ public sealed class StagePauseMenuController : MonoBehaviour
         isPaused = false;
         transitionRunning = false;
         HidePauseUiImmediately();
+        IsGameplayInputBlocked = false;
     }
 
     private IEnumerator PlayCountdownRoutine()
@@ -278,12 +304,7 @@ public sealed class StagePauseMenuController : MonoBehaviour
         }
 
         RestoreSimulationBeforeSceneChange();
-
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
+        TitleSession.RestartAtTitleForNewGame();
     }
 
     private void RestoreSimulationBeforeSceneChange()
@@ -296,6 +317,7 @@ public sealed class StagePauseMenuController : MonoBehaviour
 
         Time.timeScale = 1f;
         isPaused = false;
+        IsGameplayInputBlocked = false;
     }
 
     private IEnumerator SlideCurtain(Vector2 from, Vector2 to)
@@ -319,6 +341,116 @@ public sealed class StagePauseMenuController : MonoBehaviour
         curtainRoot.anchoredPosition = to;
     }
 
+    private void ResolveCurtainPanel()
+    {
+        if (curtainPanel != null || curtainRoot == null)
+        {
+            return;
+        }
+
+        Transform panel = curtainRoot.Find("CurtainPanel");
+        curtainPanel = panel as RectTransform;
+    }
+
+    private void InitializeCurtainLayout()
+    {
+        if (curtainLayoutInitialized || curtainRoot == null)
+        {
+            return;
+        }
+
+        curtainBaseShownPosition = curtainRoot.anchoredPosition;
+        if (curtainPanel != null)
+        {
+            curtainPanelBaseSizeDelta = curtainPanel.sizeDelta;
+        }
+
+        curtainLayoutInitialized = true;
+        ApplyCurtainPanelHeight();
+    }
+
+    private void ApplyCurtainPanelHeight()
+    {
+        if (curtainPanel == null)
+        {
+            return;
+        }
+
+        Vector2 sizeDelta = curtainPanelBaseSizeDelta;
+        sizeDelta.y += Mathf.Max(0f, curtainExtraHeight);
+        curtainPanel.sizeDelta = sizeDelta;
+    }
+
+    private void PrepareCurtainForPause()
+    {
+        if (curtainRoot == null)
+        {
+            return;
+        }
+
+        curtainRoot.gameObject.SetActive(true);
+        InitializeCurtainLayout();
+        ApplyCurtainPanelHeight();
+        RefreshCurtainPositions();
+        curtainRoot.anchoredPosition = curtainHiddenPosition;
+    }
+
+    private void RefreshCurtainPositions()
+    {
+        if (curtainRoot == null)
+        {
+            return;
+        }
+
+        curtainShownPosition = curtainBaseShownPosition + Vector2.down * curtainDownOffset;
+        curtainRoot.anchoredPosition = curtainShownPosition;
+        Canvas.ForceUpdateCanvases();
+
+        float requiredOffset = CalculateCurtainHideOffset();
+        float hideOffset = Mathf.Max(Mathf.Max(0f, curtainHiddenOffsetY), requiredOffset);
+        curtainHiddenPosition = curtainShownPosition + Vector2.up * hideOffset;
+    }
+
+    private float CalculateCurtainHideOffset()
+    {
+        RectTransform canvasRect = pauseCanvas != null
+            ? pauseCanvas.transform as RectTransform
+            : null;
+        RectTransform parentRect = curtainRoot.parent as RectTransform;
+        if (canvasRect == null || parentRect == null)
+        {
+            return Mathf.Max(0f, curtainHiddenOffsetY);
+        }
+
+        Vector3[] corners = new Vector3[4];
+        canvasRect.GetWorldCorners(corners);
+        float canvasTop = float.NegativeInfinity;
+        for (int i = 0; i < corners.Length; i++)
+        {
+            canvasTop = Mathf.Max(canvasTop, parentRect.InverseTransformPoint(corners[i]).y);
+        }
+
+        float curtainBottom = float.PositiveInfinity;
+        RectTransform[] curtainRects = curtainRoot.GetComponentsInChildren<RectTransform>(true);
+        foreach (RectTransform rect in curtainRects)
+        {
+            rect.GetWorldCorners(corners);
+            for (int i = 0; i < corners.Length; i++)
+            {
+                curtainBottom = Mathf.Min(
+                    curtainBottom,
+                    parentRect.InverseTransformPoint(corners[i]).y);
+            }
+        }
+
+        if (float.IsInfinity(canvasTop) || float.IsInfinity(curtainBottom))
+        {
+            return Mathf.Max(0f, curtainHiddenOffsetY);
+        }
+
+        return Mathf.Max(0f, canvasTop + curtainHideMargin - curtainBottom);
+    }
+
     private IEnumerator WaitUnscaled(float duration)
     {
         float elapsed = 0f;
@@ -328,6 +460,28 @@ public sealed class StagePauseMenuController : MonoBehaviour
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
+    }
+
+    private IEnumerator WaitForGameplayButtonsReleased()
+    {
+        while (GameplayButtonIsPressed())
+        {
+            yield return null;
+        }
+    }
+
+    private bool GameplayButtonIsPressed()
+    {
+        if (gameplayInput != null && gameplayInput.AnyGameplayButtonIsPressed())
+        {
+            return true;
+        }
+
+        bool keyboardButtonPressed = Keyboard.current != null &&
+            (Keyboard.current.dKey.isPressed || Keyboard.current.jKey.isPressed);
+        bool gamepadButtonPressed = Gamepad.current != null &&
+            (Gamepad.current.buttonSouth.isPressed || Gamepad.current.buttonEast.isPressed);
+        return keyboardButtonPressed || gamepadButtonPressed;
     }
 
     private void ShowPauseCanvas()

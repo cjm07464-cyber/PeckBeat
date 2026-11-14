@@ -43,22 +43,22 @@ public sealed class PeckBeatInput : MonoBehaviour
 
     public bool ActionAPressedThisFrame()
     {
-        return actionA != null && actionA.WasPressedThisFrame();
+        return CanReadGameplayInput(actionA) && actionA.WasPressedThisFrame();
     }
 
     public bool ActionBPressedThisFrame()
     {
-        return actionB != null && actionB.WasPressedThisFrame();
+        return CanReadGameplayInput(actionB) && actionB.WasPressedThisFrame();
     }
 
     public bool ActionBIsPressed()
     {
-        return actionB != null && actionB.IsPressed();
+        return CanReadGameplayInput(actionB) && actionB.IsPressed();
     }
 
     public bool ActionBReleasedThisFrame()
     {
-        return actionB != null && actionB.WasReleasedThisFrame();
+        return CanReadGameplayInput(actionB) && actionB.WasReleasedThisFrame();
     }
 
     public bool ActionAKeyboardPressedThisFrame()
@@ -81,10 +81,15 @@ public sealed class PeckBeatInput : MonoBehaviour
         return WasPressedThisFrameByDevice<Gamepad>(actionB);
     }
 
+    public bool AnyGameplayButtonIsPressed()
+    {
+        return IsAnyButtonPressed(actionA) || IsAnyButtonPressed(actionB);
+    }
+
     private static bool WasPressedThisFrameByDevice<TDevice>(InputAction action)
         where TDevice : InputDevice
     {
-        if (action == null)
+        if (!CanReadGameplayInput(action))
         {
             return false;
         }
@@ -94,6 +99,31 @@ public sealed class PeckBeatInput : MonoBehaviour
             if (control.device is TDevice &&
                 control is ButtonControl button &&
                 button.wasPressedThisFrame)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool CanReadGameplayInput(InputAction action)
+    {
+        return !StagePauseMenuController.IsGameplayInputBlocked &&
+            action != null &&
+            action.enabled;
+    }
+
+    private static bool IsAnyButtonPressed(InputAction action)
+    {
+        if (action == null)
+        {
+            return false;
+        }
+
+        foreach (InputControl control in action.controls)
+        {
+            if (control is ButtonControl button && button.isPressed)
             {
                 return true;
             }

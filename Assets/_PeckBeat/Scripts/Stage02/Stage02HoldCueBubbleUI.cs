@@ -126,6 +126,12 @@ public sealed class Stage02HoldCueBubbleUI : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
+            if (StagePauseMenuController.IsGameplayInputBlocked)
+            {
+                yield return null;
+                continue;
+            }
+
             elapsed += Time.unscaledDeltaTime;
             canvasGroup.alpha = Mathf.Clamp01(elapsed / duration);
             yield return null;

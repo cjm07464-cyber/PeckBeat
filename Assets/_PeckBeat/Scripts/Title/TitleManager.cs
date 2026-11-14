@@ -114,9 +114,7 @@ public sealed class TitleManager : MonoBehaviour
     [SerializeField] private Stage02TitleGuideUI stage02TitleGuideUI;
     [Min(0f)] [SerializeField] private float stage02TitleFadeDuration = 0.4f;
     [Min(0f)] [SerializeField] private float interStageClosedCurtainDelay = 2f;
-    [Min(0f)] [SerializeField] private float stage02TitleAfterBgmDelay = 2f;
     [Min(0f)] [SerializeField] private float stage02LoadAfterCurtainCloseDelay = 1f;
-    [SerializeField] private bool allowStage02TitleManualSkip = true;
 
     [Header("Title BGM")]
     [SerializeField] private AudioSource titleBgmSource;
@@ -146,6 +144,7 @@ public sealed class TitleManager : MonoBehaviour
     [SerializeField] private float flashHoldDuration = 0.05f;
     [SerializeField] private float flashOutDuration = 0.8f;
     [SerializeField] private float delayBeforeMascotRise = 1f;
+    [Range(0.1f, 1f)] [SerializeField] private float initialTitleWaitMultiplier = 0.6f;
     [SerializeField] private float mascotRiseDuration = 0.7f;
     [SerializeField] private float mascotRiseDistance = 350f;
     [InspectorName("Press Any Button Reveal Duration")]
@@ -170,6 +169,8 @@ public sealed class TitleManager : MonoBehaviour
     [SerializeField] private float towMoveDuration = 3f;
     [SerializeField] private float towMoveDistanceX = 2600f;
     [SerializeField] private float towMouseStartOffsetX = -700f;
+    [Min(0f)] [SerializeField] private float towMouseAppearDelay = 0.2f;
+    [Min(0.01f)] [SerializeField] private float towMoveSpeedMultiplier = 1.2f;
 
     [Header("Stage01 Title Audio")]
     [InspectorName("Stage01 Title BGM Source")]
@@ -183,8 +184,8 @@ public sealed class TitleManager : MonoBehaviour
     [Min(0f)] [SerializeField] private float delayAfterIntroDialogueBeforeStage01Title = 1f;
     [Min(0f)] [SerializeField] private float stage01TitleFadeDuration = 0.4f;
 
-    [Header("Stage01 Transition Timing")]
-    [Min(0f)] [SerializeField] private float delayAfterStage01TitleBgm = 1f;
+    [Header("Stage01 Title Tutorial")]
+    [SerializeField] private Stage01TitleGuideUI stage01TitleGuideUI;
 
     [Header("Stage Start Curtain")]
     [InspectorName("Left Curtain RectTransform")]
@@ -213,6 +214,7 @@ public sealed class TitleManager : MonoBehaviour
     private Vector3 koreanOptionBaseScale = Vector3.one;
     private Vector3 englishOptionBaseScale = Vector3.one;
     private TitleSession.TitleFlowMode startupFlowMode;
+    private bool postStage02RestartStarted;
 
     private void Awake()
     {
@@ -405,8 +407,27 @@ public sealed class TitleManager : MonoBehaviour
         Debug.Log("[Title] Stage02_Title shown", this);
 
         yield return null;
-        yield return WaitForStage02TitleBgmOrManualSkip(stage02TitleBgmExpectedDuration);
-        yield return WaitUnscaled(stage02TitleAfterBgmDelay);
+        yield return WaitForStage02TitleBgmCompletion(stage02TitleBgmExpectedDuration);
+
+        Stage02TitleGuideUI guide = ResolveStage02TitleGuide();
+        SetStage02TitleLogoActive(false);
+        if (guide != null)
+        {
+            yield return guide.ShowGuideUnfolded();
+            yield return guide.WaitForHoldStartInput();
+        }
+        else
+        {
+            Debug.LogWarning(
+                "[TitleManager] Stage02 tutorial guide is not connected. "
+                + "Waiting for a fresh Stage02 start input instead.",
+                this);
+            yield return WaitForFreshStage01TutorialStartInput();
+        }
+
+        Debug.Log("[Title] Stage02 start input detected", this);
+        PlayTitleSfx(startPressSfx);
+        stage01TitleBgmSource?.Stop();
 
         BringInterStageCurtainsToFront();
         yield return CloseCurtainsRoutine();
@@ -434,13 +455,16 @@ public sealed class TitleManager : MonoBehaviour
             canvasGroup = stage02Title.AddComponent<CanvasGroup>();
         }
 
+        Stage02TitleGuideUI guide = ResolveStage02TitleGuide();
+        guide?.HideGuide();
+        SetStage02TitleLogoActive(true);
         stage02Title.SetActive(true);
         canvasGroup.alpha = 1f;
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
 
         ApplySelectedStage02TitleImages();
-        stage02TitleGuideUI?.RefreshGuide();
+        guide?.RefreshGuide();
 
         float duration = Mathf.Max(0f, stage02TitleFadeDuration);
         float elapsed = 0f;
@@ -457,22 +481,37 @@ public sealed class TitleManager : MonoBehaviour
         stage02TitleBgmExpectedDuration = PlayStageTitleBgmForInterStage();
     }
 
-    private IEnumerator WaitForStage02TitleBgmOrManualSkip(float expectedDuration)
+    private IEnumerator WaitForStage02TitleBgmCompletion(float expectedDuration)
     {
         float duration = Mathf.Max(0f, expectedDuration);
         double expectedEndDspTime = stage02TitleBgmStartDspTime + duration;
 
         while (AudioSettings.dspTime < expectedEndDspTime)
         {
-            if (allowStage02TitleManualSkip && InterStageStartInputPressed())
-            {
-                Debug.Log("[Title] Stage02 start input detected", this);
-                PlayTitleSfx(startPressSfx);
-                stage01TitleBgmSource?.Stop();
-                yield break;
-            }
-
             yield return null;
+        }
+    }
+
+    private Stage02TitleGuideUI ResolveStage02TitleGuide()
+    {
+        if (stage02TitleGuideUI == null && stage02Title != null)
+        {
+            stage02TitleGuideUI = stage02Title.GetComponent<Stage02TitleGuideUI>();
+        }
+
+        return stage02TitleGuideUI;
+    }
+
+    private void SetStage02TitleLogoActive(bool active)
+    {
+        GameObject logoObject = stage02LogoImage != null
+            ? stage02LogoImage.gameObject
+            : stage02Title != null
+                ? stage02Title.transform.Find("Stage02Logo")?.gameObject
+                : null;
+        if (logoObject != null && logoObject.activeSelf != active)
+        {
+            logoObject.SetActive(active);
         }
     }
 
@@ -530,6 +569,86 @@ public sealed class TitleManager : MonoBehaviour
         }
 
         yield return introDialogueController.PlayPostStage02Outro();
+        if (!introDialogueController.PostStage02OutroCompleted)
+        {
+            Debug.LogWarning(
+                "[Title] PostStage02Intro ended before the outro sequence completed.",
+                this);
+            yield break;
+        }
+
+        yield return FadeOutAndRestartFromPostStage02();
+    }
+
+    private IEnumerator FadeOutAndRestartFromPostStage02()
+    {
+        if (postStage02RestartStarted)
+        {
+            yield break;
+        }
+
+        postStage02RestartStarted = true;
+        inputLocked = true;
+        float duration = introDialogueController != null
+            ? introDialogueController.EndingFadeOutDuration
+            : 2f;
+
+        if (blackOverlay != null)
+        {
+            blackOverlay.gameObject.SetActive(true);
+            blackOverlay.interactable = false;
+            blackOverlay.blocksRaycasts = true;
+            SetCanvasGroupAlpha(blackOverlay, 0f);
+            BringBlackOverlayToFront();
+
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float progress = Mathf.SmoothStep(0f, 1f, NormalizedTime(elapsed, duration));
+                SetCanvasGroupAlpha(blackOverlay, progress);
+                yield return null;
+            }
+
+            SetCanvasGroupAlpha(blackOverlay, 1f);
+        }
+        else
+        {
+            Debug.LogWarning(
+                "[Title] Black Overlay is not connected. The outro will restart without a visual fade.",
+                this);
+            yield return WaitUnscaled(duration);
+        }
+
+        introDialogueController?.PrepareForFullTitleRestart();
+        titleBgmSource?.Stop();
+        titleSfxSource?.Stop();
+        stage01TitleBgmSource?.Stop();
+        StopTowMouseAudio();
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
+        TitleSession.RestartAtTitleForNewGame();
+    }
+
+    private void BringBlackOverlayToFront()
+    {
+        if (blackOverlay == null)
+        {
+            return;
+        }
+
+        Transform overlayRoot = blackOverlay.transform;
+        Canvas parentCanvas = blackOverlay.GetComponentInParent<Canvas>();
+        if (parentCanvas != null)
+        {
+            while (overlayRoot.parent != null && overlayRoot.parent != parentCanvas.transform)
+            {
+                overlayRoot = overlayRoot.parent;
+            }
+        }
+
+        blackOverlay.transform.SetAsLastSibling();
+        overlayRoot.SetAsLastSibling();
     }
 
     private void PrepareIntroVisuals()
@@ -644,11 +763,12 @@ public sealed class TitleManager : MonoBehaviour
         PrepareMainTitleVisuals();
         PlayTitleSfx(logoLandSfx);
         yield return DropLogoRoutine();
-        yield return WaitUnscaled(delayAfterLogoDrop);
+        float shortenedWaitMultiplier = Mathf.Clamp(initialTitleWaitMultiplier, 0.1f, 1f);
+        yield return WaitUnscaled(delayAfterLogoDrop * shortenedWaitMultiplier);
 
         PlayTitleBgm();
         yield return RevealBackgroundRoutine();
-        yield return WaitUnscaled(delayBeforeMascotRise);
+        yield return WaitUnscaled(delayBeforeMascotRise * shortenedWaitMultiplier);
         yield return RaiseMascotRoutine();
         yield return RevealPressAnyButtonRoutine();
         inputLocked = false;
@@ -923,7 +1043,8 @@ public sealed class TitleManager : MonoBehaviour
         state = TitleState.StartingGame;
         inputLocked = true;
         float startPressDuration = PlayTitleSfx(startPressSfx);
-        yield return WaitUnscaled(startPressDuration);
+        float waitBeforeTow = Mathf.Min(startPressDuration, Mathf.Max(0f, towMouseAppearDelay));
+        yield return WaitUnscaled(waitBeforeTow);
 
         SetActive(inputSelectPanel, false);
         SetActive(languageSelectPanel, false);
@@ -941,14 +1062,31 @@ public sealed class TitleManager : MonoBehaviour
             yield return WaitUnscaled(delayAfterIntroDialogueBeforeStage01Title);
         }
 
+        Stage01TitleGuideUI guide = ResolveStage01TitleGuide();
+        guide?.HideGuide();
+        SetStage01TitleLogoActive(true);
+
         yield return RevealStage01TitleRoutine();
 
         if (shouldPlayIntroDialogue)
         {
             introDialogueController.ReleaseIntroBackground();
         }
-        yield return PlayAndWaitForStage01TitleBgm();
-        yield return WaitUnscaled(delayAfterStage01TitleBgm);
+
+        yield return PlayAndWaitForStage01TitleBgmCompletion();
+        if (guide != null)
+        {
+            SetStage01TitleLogoActive(false);
+            yield return guide.ShowGuideUnfolded();
+            yield return guide.WaitForHoldStartInput();
+        }
+        else
+        {
+            yield return WaitForFreshStage01TutorialStartInput();
+        }
+
+        PlayTitleSfx(startPressSfx);
+        stage01TitleBgmSource?.Stop();
         yield return CloseCurtainsRoutine();
         yield return WaitUnscaled(curtainWaitBeforeLoad);
         SceneManager.LoadScene(stage01SceneName);
@@ -1007,7 +1145,8 @@ public sealed class TitleManager : MonoBehaviour
         SetCanvasGroupAlpha(towMouseCanvasGroup, 1f);
         StartTowMouseAudio();
 
-        float duration = Mathf.Max(0f, towMoveDuration);
+        float duration = Mathf.Max(0f, towMoveDuration)
+            / Mathf.Max(0.01f, towMoveSpeedMultiplier);
         float elapsed = 0f;
         while (elapsed < duration)
         {
@@ -1045,7 +1184,7 @@ public sealed class TitleManager : MonoBehaviour
         StopTowMouseAudio();
     }
 
-    private IEnumerator PlayAndWaitForStage01TitleBgm()
+    private IEnumerator PlayAndWaitForStage01TitleBgmCompletion()
     {
         if (stage01TitleBgmSource == null)
         {
@@ -1066,11 +1205,114 @@ public sealed class TitleManager : MonoBehaviour
             yield break;
         }
 
+        float playbackSpeed = Mathf.Max(0.01f, Mathf.Abs(stage01TitleBgmSource.pitch));
+        double expectedDuration = stage01TitleBgmSource.clip.length / playbackSpeed;
+        double playRequestedDspTime = AudioSettings.dspTime;
         stage01TitleBgmSource.Play();
-        while (stage01TitleBgmSource.isPlaying)
+
+        bool playbackStarted = stage01TitleBgmSource.isPlaying;
+        const double playbackStartGraceSeconds = 0.5d;
+        while (!playbackStarted &&
+               AudioSettings.dspTime - playRequestedDspTime < playbackStartGraceSeconds)
+        {
+            yield return null;
+            playbackStarted = stage01TitleBgmSource != null && stage01TitleBgmSource.isPlaying;
+        }
+
+        if (!playbackStarted)
+        {
+            // A very short clip can finish inside the start grace period. In that
+            // case the pitch-aware expected duration still prevents an early reveal.
+            double expectedEndDspTime = playRequestedDspTime + expectedDuration;
+            while (AudioSettings.dspTime < expectedEndDspTime)
+            {
+                yield return null;
+            }
+
+            yield break;
+        }
+
+        while (stage01TitleBgmSource != null && stage01TitleBgmSource.isPlaying)
         {
             yield return null;
         }
+    }
+
+    private Stage01TitleGuideUI ResolveStage01TitleGuide()
+    {
+        if (stage01TitleGuideUI == null && stage01Title != null)
+        {
+            stage01TitleGuideUI = stage01Title.GetComponent<Stage01TitleGuideUI>();
+        }
+
+        return stage01TitleGuideUI;
+    }
+
+    private void SetStage01TitleLogoActive(bool active)
+    {
+        if (stage01Title == null)
+        {
+            return;
+        }
+
+        Transform titleLogo = stage01Title.transform.Find("Title_01");
+        if (titleLogo == null)
+        {
+            titleLogo = stage01Title.transform.Find("BackGround/Title_01");
+        }
+        if (titleLogo != null && titleLogo.gameObject.activeSelf != active)
+        {
+            titleLogo.gameObject.SetActive(active);
+        }
+    }
+
+    private IEnumerator WaitForFreshStage01TutorialStartInput()
+    {
+        while (Stage01TutorialStartInputIsHeld())
+        {
+            yield return null;
+        }
+
+        // Require a new frame after the guide is fully visible so an earlier
+        // confirmation press cannot pass through into the stage start.
+        yield return null;
+
+        while (!Stage01TutorialStartInputPressed())
+        {
+            yield return null;
+        }
+    }
+
+    private static bool Stage01TutorialStartInputPressed()
+    {
+        bool keyboardPressed = Keyboard.current != null &&
+            (Keyboard.current.dKey.wasPressedThisFrame ||
+             Keyboard.current.jKey.wasPressedThisFrame);
+        bool gamepadPressed = Gamepad.current != null &&
+            (Gamepad.current.buttonSouth.wasPressedThisFrame ||
+             Gamepad.current.buttonEast.wasPressedThisFrame);
+
+        return TitleSession.SelectedInputMode switch
+        {
+            TitleSession.InputMode.KeyboardMouse => keyboardPressed,
+            TitleSession.InputMode.Xbox => gamepadPressed,
+            _ => keyboardPressed || gamepadPressed
+        };
+    }
+
+    private static bool Stage01TutorialStartInputIsHeld()
+    {
+        bool keyboardHeld = Keyboard.current != null &&
+            (Keyboard.current.dKey.isPressed || Keyboard.current.jKey.isPressed);
+        bool gamepadHeld = Gamepad.current != null &&
+            (Gamepad.current.buttonSouth.isPressed || Gamepad.current.buttonEast.isPressed);
+
+        return TitleSession.SelectedInputMode switch
+        {
+            TitleSession.InputMode.KeyboardMouse => keyboardHeld,
+            TitleSession.InputMode.Xbox => gamepadHeld,
+            _ => keyboardHeld || gamepadHeld
+        };
     }
 
     private float PlayStageTitleBgmForInterStage()
@@ -1304,11 +1546,11 @@ public sealed class TitleManager : MonoBehaviour
 
         SetGuideText(
             koreanText,
-            "조작 방식을 선택하세요\nA: 이동 / B: 선택",
+            "왼쪽 버튼 (또는 D) : 이동\n오른쪽 버튼 (또는 J) : 선택",
             koreanTmpFontAsset);
         SetGuideText(
             inputSelectEnglishGuideText,
-            "Select Input Method\nA: Move / B: Select",
+            "Left Button (or D) : Move\nRight Button (or J) : Select",
             englishTmpFontAsset);
     }
 

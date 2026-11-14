@@ -8,6 +8,14 @@ using UnityEngine.UI;
 public static class Stage01TitleGuideHierarchyBuilder
 {
     private const string TitleScenePath = "Assets/Scenes/TitleScene.unity";
+    private const string KeyboardDPath = "Assets/_PeckBeat/Art/Title/D키캡_0.png";
+    private const string KeyboardJPath = "Assets/_PeckBeat/Art/Title/J키_0.png";
+    private const string GamepadAPath = "Assets/_PeckBeat/Art/Title/XBOX_A키캡_0.png";
+    private const string GamepadBPath = "Assets/_PeckBeat/Art/Title/XBOX_B키캡_0.png";
+    private const string ChickIconPath =
+        "Assets/_PeckBeat/Art/Stage_01/Player/Test/Test2/아기새 아이콘.png";
+    private const string CuckooIconPath =
+        "Assets/_PeckBeat/Art/Stage_01/Player/Test/Test2/뻐꾸기아이콘.png";
 
     [MenuItem("PeckBeat/Title/Build Stage01 Title Guide UI")]
     private static void BuildStage01TitleGuideUI()
@@ -29,64 +37,104 @@ public static class Stage01TitleGuideHierarchyBuilder
         RectTransform guideRoot = GetOrCreateRect(stage01Title, "Stage01GuideRoot", out bool rootCreated);
         RectTransform guideTitle = GetOrCreateRect(guideRoot, "GuideTitleText", out bool guideTitleCreated);
         RectTransform leftGuide = GetOrCreateRect(guideRoot, "LeftGuide", out bool leftCreated);
+        RectTransform leftTarget = GetOrCreateRect(leftGuide, "LeftTargetImage", out bool leftTargetCreated);
+        RectTransform leftHeading = GetOrCreateRect(leftGuide, "LeftHeadingText", out bool leftHeadingCreated);
         RectTransform leftButton = GetOrCreateRect(leftGuide, "LeftButtonImage", out bool leftButtonCreated);
         RectTransform leftText = GetOrCreateRect(leftGuide, "LeftGuideText", out bool leftTextCreated);
         RectTransform rightGuide = GetOrCreateRect(guideRoot, "RightGuide", out bool rightCreated);
+        RectTransform rightTarget = GetOrCreateRect(rightGuide, "RightTargetImage", out bool rightTargetCreated);
+        RectTransform rightHeading = GetOrCreateRect(rightGuide, "RightHeadingText", out bool rightHeadingCreated);
         RectTransform rightButton = GetOrCreateRect(rightGuide, "RightButtonImage", out bool rightButtonCreated);
         RectTransform rightText = GetOrCreateRect(rightGuide, "RightGuideText", out bool rightTextCreated);
+        RectTransform startPrompt = GetOrCreateRect(
+            guideRoot,
+            "StartPromptText",
+            out bool startPromptCreated);
 
         if (rootCreated)
         {
-            SetRect(guideRoot, new Vector2(960f, 250f), new Vector2(1400f, 170f));
+            SetRect(guideRoot, new Vector2(960f, 360f), new Vector2(1500f, 580f));
         }
 
         if (leftCreated)
         {
-            SetRect(leftGuide, new Vector2(-350f, -30f), new Vector2(620f, 130f));
-        }
-        else
-        {
-            MoveGuideDownIfAtDefaultPosition(leftGuide);
+            SetRect(leftGuide, new Vector2(-350f, -10f), new Vector2(650f, 360f));
         }
 
         if (rightCreated)
         {
-            SetRect(rightGuide, new Vector2(350f, -30f), new Vector2(620f, 130f));
-        }
-        else
-        {
-            MoveGuideDownIfAtDefaultPosition(rightGuide);
+            SetRect(rightGuide, new Vector2(350f, -10f), new Vector2(650f, 360f));
         }
 
-        TMP_Text guideTitleText = EnsureText(guideTitle.gameObject, "게임 방법", 36f);
+        Image guidePanelImage = EnsurePanelImage(guideRoot.gameObject);
+        TMP_Text guideTitleText = EnsureText(guideTitle.gameObject, "게임 방법", 42f);
+        Image leftTargetImage = EnsureImage(leftTarget.gameObject);
+        TMP_Text leftHeadingText = EnsureText(leftHeading.gameObject, "아기새 먹이주기", 34f);
         Image leftButtonImage = EnsureImage(leftButton.gameObject);
         Image rightButtonImage = EnsureImage(rightButton.gameObject);
-        TMP_Text leftGuideText = EnsureText(leftText.gameObject, "한 번 누르기!", 38f);
-        TMP_Text rightGuideText = EnsureText(rightText.gameObject, "두 번 누르기!", 38f);
+        TMP_Text leftGuideText = EnsureText(
+            leftText.gameObject,
+            "왼쪽 버튼을 한 번 눌러 먹이를 주세요!",
+            30f);
+        Image rightTargetImage = EnsureImage(rightTarget.gameObject);
+        TMP_Text rightHeadingText = EnsureText(rightHeading.gameObject, "뻐꾸기 쫓아내기", 34f);
+        TMP_Text rightGuideText = EnsureText(
+            rightText.gameObject,
+            "오른쪽 버튼을 두 번 눌러 쫓아내세요!",
+            30f);
+        TMP_Text startPromptText = EnsureText(
+            startPrompt.gameObject,
+            "왼쪽 또는 오른쪽 버튼을 눌러 시작하세요!",
+            30f);
 
         if (guideTitleCreated)
         {
-            SetRect(guideTitle, new Vector2(0f, 50f), new Vector2(600f, 50f));
+            SetRect(guideTitle, new Vector2(0f, 245f), new Vector2(700f, 60f));
+        }
+
+        if (leftTargetCreated)
+        {
+            SetRect(leftTarget, new Vector2(-205f, 5f), new Vector2(190f, 190f));
+        }
+
+        if (rightTargetCreated)
+        {
+            SetRect(rightTarget, new Vector2(-205f, 5f), new Vector2(190f, 190f));
+        }
+
+        if (leftHeadingCreated)
+        {
+            SetRect(leftHeading, new Vector2(95f, 115f), new Vector2(400f, 55f));
+        }
+
+        if (rightHeadingCreated)
+        {
+            SetRect(rightHeading, new Vector2(95f, 115f), new Vector2(400f, 55f));
         }
 
         if (leftButtonCreated)
         {
-            SetRect(leftButton, new Vector2(-235f, 0f), new Vector2(96f, 96f));
+            SetRect(leftButton, new Vector2(-205f, -125f), new Vector2(92f, 92f));
         }
 
         if (rightButtonCreated)
         {
-            SetRect(rightButton, new Vector2(-235f, 0f), new Vector2(96f, 96f));
+            SetRect(rightButton, new Vector2(-205f, -125f), new Vector2(92f, 92f));
         }
 
         if (leftTextCreated)
         {
-            SetRect(leftText, new Vector2(55f, 0f), new Vector2(470f, 110f));
+            SetRect(leftText, new Vector2(95f, -15f), new Vector2(400f, 170f));
         }
 
         if (rightTextCreated)
         {
-            SetRect(rightText, new Vector2(55f, 0f), new Vector2(470f, 110f));
+            SetRect(rightText, new Vector2(95f, -15f), new Vector2(400f, 170f));
+        }
+
+        if (startPromptCreated)
+        {
+            SetRect(startPrompt, new Vector2(0f, -245f), new Vector2(1100f, 55f));
         }
 
         Stage01TitleGuideUI guide = stage01Title.GetComponent<Stage01TitleGuideUI>();
@@ -97,14 +145,54 @@ public static class Stage01TitleGuideHierarchyBuilder
 
         Undo.RecordObject(guide, "Connect Stage01 Title Guide UI");
         SerializedObject serializedGuide = new SerializedObject(guide);
-        SetObjectReference(serializedGuide, "guideRoot", guideRoot.gameObject);
-        SetObjectReference(serializedGuide, "guideTitleText", guideTitleText);
-        SetObjectReference(serializedGuide, "leftButtonImage", leftButtonImage);
-        SetObjectReference(serializedGuide, "leftGuideText", leftGuideText);
-        SetObjectReference(serializedGuide, "rightButtonImage", rightButtonImage);
-        SetObjectReference(serializedGuide, "rightGuideText", rightGuideText);
+        SetObjectReferenceIfEmpty(serializedGuide, "guideRoot", guideRoot.gameObject);
+        SetObjectReferenceIfEmpty(serializedGuide, "guidePanelImage", guidePanelImage);
+        SetObjectReferenceIfEmpty(serializedGuide, "guideTitleText", guideTitleText);
+        SetObjectReferenceIfEmpty(serializedGuide, "leftTargetImage", leftTargetImage);
+        SetObjectReferenceIfEmpty(serializedGuide, "leftHeadingText", leftHeadingText);
+        SetObjectReferenceIfEmpty(serializedGuide, "leftButtonImage", leftButtonImage);
+        SetObjectReferenceIfEmpty(serializedGuide, "leftGuideText", leftGuideText);
+        SetObjectReferenceIfEmpty(serializedGuide, "rightTargetImage", rightTargetImage);
+        SetObjectReferenceIfEmpty(serializedGuide, "rightHeadingText", rightHeadingText);
+        SetObjectReferenceIfEmpty(serializedGuide, "rightButtonImage", rightButtonImage);
+        SetObjectReferenceIfEmpty(serializedGuide, "rightGuideText", rightGuideText);
+        SetObjectReferenceIfEmpty(serializedGuide, "startPromptText", startPromptText);
+        SetObjectReferenceIfEmpty(
+            serializedGuide,
+            "keyboardDButtonSprite",
+            AssetDatabase.LoadAssetAtPath<Sprite>(KeyboardDPath));
+        SetObjectReferenceIfEmpty(
+            serializedGuide,
+            "keyboardJButtonSprite",
+            AssetDatabase.LoadAssetAtPath<Sprite>(KeyboardJPath));
+        SetObjectReferenceIfEmpty(
+            serializedGuide,
+            "gamepadAButtonSprite",
+            AssetDatabase.LoadAssetAtPath<Sprite>(GamepadAPath));
+        SetObjectReferenceIfEmpty(
+            serializedGuide,
+            "gamepadBButtonSprite",
+            AssetDatabase.LoadAssetAtPath<Sprite>(GamepadBPath));
+        SetObjectReferenceIfEmpty(
+            serializedGuide,
+            "chickGuideSprite",
+            AssetDatabase.LoadAssetAtPath<Sprite>(ChickIconPath));
+        SetObjectReferenceIfEmpty(
+            serializedGuide,
+            "cuckooGuideSprite",
+            AssetDatabase.LoadAssetAtPath<Sprite>(CuckooIconPath));
         CopyTitleManagerFonts(scene, serializedGuide);
         serializedGuide.ApplyModifiedProperties();
+
+        TitleManager titleManager = FindSceneComponent<TitleManager>(scene);
+        if (titleManager != null)
+        {
+            Undo.RecordObject(titleManager, "Connect Stage01 Title Guide To Manager");
+            SerializedObject serializedManager = new SerializedObject(titleManager);
+            SetObjectReferenceIfEmpty(serializedManager, "stage01TitleGuideUI", guide);
+            serializedManager.ApplyModifiedProperties();
+            EditorUtility.SetDirty(titleManager);
+        }
 
         EditorUtility.SetDirty(guide);
         EditorSceneManager.MarkSceneDirty(scene);
@@ -112,7 +200,8 @@ public static class Stage01TitleGuideHierarchyBuilder
 
         Debug.Log(
             "[Stage01TitleGuideBuilder] Stage01 guide hierarchy is ready. " +
-            "Assign D/J/A/B button sprites on Stage01TitleGuideUI. The scene was not saved.",
+            "Missing tutorial objects were added without replacing existing layout or assignments. " +
+            "The scene was not saved.",
             guideRoot);
     }
 
@@ -186,31 +275,32 @@ public static class Stage01TitleGuideHierarchyBuilder
         rect.localRotation = Quaternion.identity;
     }
 
-    private static void MoveGuideDownIfAtDefaultPosition(RectTransform rect)
-    {
-        if (!Mathf.Approximately(rect.anchoredPosition.y, 0f))
-        {
-            return;
-        }
-
-        Undo.RecordObject(rect, $"Adjust {rect.name} For Guide Title");
-        Vector2 position = rect.anchoredPosition;
-        position.y = -30f;
-        rect.anchoredPosition = position;
-    }
-
     private static Image EnsureImage(GameObject target)
     {
         Image image = target.GetComponent<Image>();
         if (image == null)
         {
             image = Undo.AddComponent<Image>(target);
+            Undo.RecordObject(image, $"Configure {target.name}");
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            image.enabled = image.sprite != null;
         }
 
-        Undo.RecordObject(image, $"Configure {target.name}");
-        image.preserveAspect = true;
-        image.raycastTarget = false;
-        image.enabled = image.sprite != null;
+        return image;
+    }
+
+    private static Image EnsurePanelImage(GameObject target)
+    {
+        Image image = target.GetComponent<Image>();
+        if (image == null)
+        {
+            image = Undo.AddComponent<Image>(target);
+            Undo.RecordObject(image, "Configure Stage01 Guide Panel");
+            image.color = new Color(0.04f, 0.06f, 0.1f, 0.88f);
+            image.raycastTarget = false;
+        }
+
         return image;
     }
 
@@ -220,16 +310,16 @@ public static class Stage01TitleGuideHierarchyBuilder
         if (text == null)
         {
             text = Undo.AddComponent<TextMeshProUGUI>(target);
+            Undo.RecordObject(text, $"Configure {target.name}");
             text.fontSize = fontSize;
             text.color = Color.white;
             text.alignment = TextAlignmentOptions.Center;
-            text.textWrappingMode = TextWrappingModes.NoWrap;
-            text.overflowMode = TextOverflowModes.Overflow;
+            text.textWrappingMode = TextWrappingModes.Normal;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.text = defaultText;
+            text.raycastTarget = false;
         }
 
-        Undo.RecordObject(text, $"Configure {target.name}");
-        text.text = defaultText;
-        text.raycastTarget = false;
         return text;
     }
 
@@ -261,10 +351,13 @@ public static class Stage01TitleGuideHierarchyBuilder
         }
     }
 
-    private static void SetObjectReference(SerializedObject target, string propertyName, Object value)
+    private static void SetObjectReferenceIfEmpty(
+        SerializedObject target,
+        string propertyName,
+        Object value)
     {
         SerializedProperty property = target.FindProperty(propertyName);
-        if (property != null)
+        if (property != null && property.objectReferenceValue == null && value != null)
         {
             property.objectReferenceValue = value;
         }

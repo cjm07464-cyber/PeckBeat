@@ -44,6 +44,8 @@ public sealed class Stage01FeedingController : MonoBehaviour
     [SerializeField] private PeckBeatInput input;
     [SerializeField] private PeckBeatRhythmManager rhythmManager;
     [SerializeField] private Stage01AudioController audioController;
+    [SerializeField] private StageLifeCounter lifeCounter;
+    [SerializeField] private StageGoalCounter goalCounter;
 
     [Header("Characters")]
     [SerializeField] private MotherBirdSpriteController motherBird;
@@ -84,6 +86,18 @@ public sealed class Stage01FeedingController : MonoBehaviour
 
     private void Start()
     {
+        if (lifeCounter == null)
+        {
+            lifeCounter = Object.FindFirstObjectByType<StageLifeCounter>(
+                FindObjectsInactive.Include);
+        }
+
+        if (goalCounter == null)
+        {
+            goalCounter = Object.FindFirstObjectByType<StageGoalCounter>(
+                FindObjectsInactive.Include);
+        }
+
         if (chart == null)
         {
             return;
@@ -95,6 +109,11 @@ public sealed class Stage01FeedingController : MonoBehaviour
 
     private void Update()
     {
+        if (StagePauseMenuController.IsGameplayInputBlocked)
+        {
+            return;
+        }
+
         if (TryStartStage01ClearTransition())
         {
             return;
@@ -261,6 +280,7 @@ public sealed class Stage01FeedingController : MonoBehaviour
         }
 
         MissCount++;
+        lifeCounter?.RegisterMiss(bird);
         audioController?.PlayMiss();
         if (bird.IsChick)
         {
@@ -276,6 +296,11 @@ public sealed class Stage01FeedingController : MonoBehaviour
 
     private void ProcessInput(double songTime)
     {
+        if (StagePauseMenuController.IsGameplayInputBlocked)
+        {
+            return;
+        }
+
         bool actionAPressed = ActionAPressedThisFrame();
         bool actionBPressed = ActionBPressedThisFrame();
         RuntimeBird target = FindInputTarget(songTime, actionAPressed, actionBPressed);
@@ -286,6 +311,7 @@ public sealed class Stage01FeedingController : MonoBehaviour
             {
                 motherBird?.PlayWrongFeed();
                 MissCount++;
+                lifeCounter?.RegisterMiss();
                 audioController?.PlayMiss();
             }
 
@@ -293,6 +319,7 @@ public sealed class Stage01FeedingController : MonoBehaviour
             {
                 motherBird?.PlayWrongPeck();
                 MissCount++;
+                lifeCounter?.RegisterMiss();
                 audioController?.PlayMiss();
             }
 
@@ -376,6 +403,7 @@ public sealed class Stage01FeedingController : MonoBehaviour
                 audioController?.PlayMotherFeed();
                 audioController?.PlayChickEat();
                 SuccessCount++;
+                goalCounter?.RegisterSuccess(StageGoalCounter.GoalType.Stage01Feeding, bird);
                 playedFeedSuccessComposite = true;
             }
             else if (grade == FeedingGrade.Good)
@@ -385,6 +413,7 @@ public sealed class Stage01FeedingController : MonoBehaviour
                 audioController?.PlayMotherFeed();
                 audioController?.PlayChickEat();
                 SuccessCount++;
+                goalCounter?.RegisterSuccess(StageGoalCounter.GoalType.Stage01Feeding, bird);
             }
             else
             {
@@ -392,6 +421,7 @@ public sealed class Stage01FeedingController : MonoBehaviour
                 bird.UseFailedExit = true;
                 audioController?.PlayMiss();
                 MissCount++;
+                lifeCounter?.RegisterMiss(bird);
             }
         }
         else
@@ -402,6 +432,7 @@ public sealed class Stage01FeedingController : MonoBehaviour
             bird.UseCuckooWrongExit = true;
             audioController?.PlayMiss();
             MissCount++;
+            lifeCounter?.RegisterMiss(bird);
         }
 
         ResolveBird(bird, songTime);
@@ -453,6 +484,7 @@ public sealed class Stage01FeedingController : MonoBehaviour
             bird.UseFailedExit = true;
             audioController?.PlayMiss();
             MissCount++;
+            lifeCounter?.RegisterMiss(bird);
             ResolveBird(bird, songTime);
             return;
         }
@@ -518,6 +550,7 @@ public sealed class Stage01FeedingController : MonoBehaviour
         audioController?.PlayMotherPeck2();
         audioController?.PlayCuckooHit2();
         SuccessCount++;
+        goalCounter?.RegisterSuccess(StageGoalCounter.GoalType.Stage01Cuckoo, bird);
     }
 
     private void ResolveBird(RuntimeBird bird, double songTime)

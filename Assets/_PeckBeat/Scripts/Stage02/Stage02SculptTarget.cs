@@ -100,6 +100,11 @@ public sealed class Stage02SculptTarget : MonoBehaviour
         }
     }
 
+    public void SetNormalTravelDirection(bool movingRight)
+    {
+        ratVisual?.SetTravelDirection(movingRight);
+    }
+
     public void ApplyNormalHitVisual(int hitCount)
     {
         sculptObjectVisual?.ApplyNormalHitVisual(hitCount);

@@ -14,6 +14,20 @@ public sealed class Stage02SculptingController : MonoBehaviour
         Exiting
     }
 
+    private enum IncomingSignalType
+    {
+        ShortWhistle,
+        LongWhistle
+    }
+
+    private sealed class IncomingSignal
+    {
+        public double SongTime;
+        public int Sequence;
+        public IncomingSignalType Type;
+        public Stage02SculptingChart.Event TargetEvent;
+    }
+
     private sealed class RuntimeTarget
     {
         public Stage02SculptingChart.Event ChartEvent;
@@ -28,6 +42,7 @@ public sealed class Stage02SculptingController : MonoBehaviour
         public int HoldPeckSoundCount;
         public double HoldStartSongTime;
         public double NextHoldPeckSoundTime;
+        public bool EntersFromRight;
     }
 
     [Header("Stage Data")]
@@ -38,6 +53,8 @@ public sealed class Stage02SculptingController : MonoBehaviour
     [SerializeField] private PeckBeatRhythmManager rhythmManager;
     [SerializeField] private Stage02AudioController audioController;
     [SerializeField] private Stage02HoldCueBubbleUI holdCueBubble;
+    [SerializeField] private StageLifeCounter lifeCounter;
+    [SerializeField] private StageGoalCounter goalCounter;
 
     [Header("Stage 02 Actors")]
     [SerializeField] private Stage02WoodpeckerController woodpecker;
@@ -51,21 +68,24 @@ public sealed class Stage02SculptingController : MonoBehaviour
     [SerializeField] private Transform slot2;
     [SerializeField] private Transform slot3;
 
+    [Header("Normal Target Entry Direction")]
+    [SerializeField] private bool enableRightSideNormalTargets = true;
+    [Range(0f, 0.5f)] [SerializeField] private float rightSideNormalFrequency = 0.30f;
+    [Min(0)] [SerializeField] private int initialLeftNormalTargetCount = 3;
+
     [Header("Incoming Target Signal")]
     [Min(0f)] [SerializeField] private float whistleVisualDuration = 0.18f;
-    [Min(0f)] [SerializeField] private float whistleRepeatInterval = 0.22f;
     [Min(0f)] [SerializeField] private float holdWhistleFallbackDuration = 0.8f;
 
     [Header("Hold Cue")]
-    [Min(0f)] [SerializeField] private float holdCueLeadSeconds = 0.35f;
     [SerializeField] private Vector3 cueWorldOffset = new Vector3(0f, 1.8f, 0f);
 
     [Header("Normal Target Judgement")]
     [Min(0f)] [SerializeField] private float perfectWindowSeconds = 0.08f;
 
     [Header("Hold Target Judgement")]
-    [Min(0f)] [SerializeField] private float holdPerfectWindowSeconds = 0.08f;
-    [Min(0f)] [SerializeField] private float holdGoodWindowSeconds = 0.22f;
+    [Min(0f)] [SerializeField] private float holdPerfectWindowSeconds = 0.14f;
+    [Min(0f)] [SerializeField] private float holdGoodWindowSeconds = 0.30f;
     [Min(0f)] [SerializeField] private float holdReleaseGraceSeconds = 0.12f;
 
     [Header("Stage Clear Transition")]
@@ -73,15 +93,32 @@ public sealed class Stage02SculptingController : MonoBehaviour
 
     private readonly List<Stage02SculptingChart.Event> orderedEvents = new();
     private readonly List<RuntimeTarget> activeTargets = new();
+    private readonly List<IncomingSignal> incomingSignals = new();
     private int nextEventIndex;
+    private int nextIncomingSignalIndex;
     private RuntimeTarget holdCueTarget;
+    private Stage02SculptingChart.Event pendingHoldCueEvent;
     private bool stage02ClearTransitionStarted;
+    private int normalTargetSequenceIndex;
+    private float rightSideDirectionAccumulator = 0.5f;
 
     public int SuccessCount { get; private set; }
     public int MissCount { get; private set; }
 
     private void Start()
     {
+        if (lifeCounter == null)
+        {
+            lifeCounter = UnityEngine.Object.FindFirstObjectByType<StageLifeCounter>(
+                FindObjectsInactive.Include);
+        }
+
+        if (goalCounter == null)
+        {
+            goalCounter = UnityEngine.Object.FindFirstObjectByType<StageGoalCounter>(
+                FindObjectsInactive.Include);
+        }
+
         if (foremanRat == null)
         {
             foremanRat = UnityEngine.Object.FindFirstObjectByType<Stage02ForemanRatVisual>(
@@ -110,10 +147,16 @@ public sealed class Stage02SculptingController : MonoBehaviour
 
         orderedEvents.AddRange(chart.Events);
         orderedEvents.Sort((left, right) => left.targetBeat.CompareTo(right.targetBeat));
+        BuildIncomingSignalSchedule();
     }
 
     private void Update()
     {
+        if (StagePauseMenuController.IsGameplayInputBlocked)
+        {
+            return;
+        }
+
         if (TryStartStage02ClearTransition())
         {
             return;
@@ -126,9 +169,9 @@ public sealed class Stage02SculptingController : MonoBehaviour
 
         double songTime = rhythmManager.SongTime;
 
+        UpdateIncomingSignals(songTime);
         SpawnDueTargets(songTime);
         UpdateTargetMovement(songTime);
-        UpdateHoldCue(songTime);
         ProcessInput(songTime);
         UpdateHoldPeckAudio(songTime);
         EvaluateTargetTiming(songTime);
@@ -195,12 +238,19 @@ public sealed class Stage02SculptingController : MonoBehaviour
 
     private void SpawnTarget(Stage02SculptingChart.Event chartEvent)
     {
-        Stage02SculptTarget prefab = chartEvent.targetType == Stage02SculptingChart.TargetType.Hold
+        bool isHoldTarget = chartEvent.targetType == Stage02SculptingChart.TargetType.Hold;
+        bool entersFromRight = !isHoldTarget && ShouldNormalTargetEnterFromRight();
+        Stage02SculptTarget prefab = isHoldTarget
             ? holdTargetPrefab
             : normalTargetPrefab;
 
-        Stage02SculptTarget instance = Instantiate(prefab, slot1.position, slot1.rotation, targetContainer);
-        if (chartEvent.targetType == Stage02SculptingChart.TargetType.Hold)
+        Transform entrySlot = entersFromRight ? slot3 : slot1;
+        Stage02SculptTarget instance = Instantiate(
+            prefab,
+            entrySlot.position,
+            entrySlot.rotation,
+            targetContainer);
+        if (isHoldTarget)
         {
             Debug.Log($"[Stage02] Hold Spawn beat={chartEvent.targetBeat:0.###}", this);
             instance.ConfigureHold();
@@ -208,46 +258,146 @@ public sealed class Stage02SculptingController : MonoBehaviour
         else
         {
             instance.ConfigureNormal(chartEvent.requiredHits);
+            instance.SetNormalTravelDirection(!entersFromRight);
         }
 
         instance.BeginApproachVisual();
 
-        if (chartEvent.targetType == Stage02SculptingChart.TargetType.Normal)
-        {
-            StartCoroutine(SignalIncomingTarget(chartEvent.requiredHits));
-        }
-        else
-        {
-            SignalIncomingHoldTarget();
-        }
-
-        activeTargets.Add(new RuntimeTarget
+        RuntimeTarget runtimeTarget = new()
         {
             ChartEvent = chartEvent,
             Transform = instance.transform,
             Visual = instance,
-            Phase = TargetPhase.Active
-        });
-    }
+            Phase = TargetPhase.Active,
+            EntersFromRight = entersFromRight
+        };
+        activeTargets.Add(runtimeTarget);
 
-    private IEnumerator SignalIncomingTarget(int requiredHits)
-    {
-        int whistleCount = Mathf.Clamp(requiredHits, 1, 2);
-        for (int i = 0; i < whistleCount; i++)
+        if (pendingHoldCueEvent == chartEvent)
         {
-            audioController?.PlayWhistleShort();
-            foremanRat?.PlayWhistle(Mathf.Max(0f, whistleVisualDuration));
-
-            if (i < whistleCount - 1)
-            {
-                yield return new WaitForSeconds(Mathf.Max(0f, whistleRepeatInterval));
-            }
+            pendingHoldCueEvent = null;
+            ShowHoldCue(runtimeTarget);
         }
     }
 
-    private void SignalIncomingHoldTarget()
+    private bool ShouldNormalTargetEnterFromRight()
     {
+        int sequence = normalTargetSequenceIndex++;
+        if (!enableRightSideNormalTargets || sequence < initialLeftNormalTargetCount)
+        {
+            return false;
+        }
+
+        float frequency = Mathf.Clamp(rightSideNormalFrequency, 0f, 0.5f);
+        rightSideDirectionAccumulator += frequency;
+        if (rightSideDirectionAccumulator < 1f)
+        {
+            return false;
+        }
+
+        rightSideDirectionAccumulator -= 1f;
+        return true;
+    }
+
+    private void BuildIncomingSignalSchedule()
+    {
+        incomingSignals.Clear();
+        nextIncomingSignalIndex = 0;
+
+        int sequence = 0;
+        foreach (Stage02SculptingChart.Event chartEvent in orderedEvents)
+        {
+            if (chartEvent == null)
+            {
+                continue;
+            }
+
+            if (chartEvent.targetType == Stage02SculptingChart.TargetType.Hold)
+            {
+                AddIncomingSignal(
+                    chartEvent.targetBeat - 2f,
+                    IncomingSignalType.LongWhistle,
+                    sequence++,
+                    chartEvent);
+
+                continue;
+            }
+
+            int requiredHits = Mathf.Clamp(chartEvent.requiredHits, 1, 2);
+            if (requiredHits == 2)
+            {
+                AddIncomingSignal(
+                    chartEvent.targetBeat - 2f,
+                    IncomingSignalType.ShortWhistle,
+                    sequence++,
+                    chartEvent);
+            }
+
+            AddIncomingSignal(
+                chartEvent.targetBeat - 1f,
+                IncomingSignalType.ShortWhistle,
+                sequence++,
+                chartEvent);
+        }
+
+        incomingSignals.Sort((left, right) =>
+        {
+            int timeComparison = left.SongTime.CompareTo(right.SongTime);
+            return timeComparison != 0
+                ? timeComparison
+                : left.Sequence.CompareTo(right.Sequence);
+        });
+    }
+
+    private void AddIncomingSignal(
+        float signalBeat,
+        IncomingSignalType type,
+        int sequence,
+        Stage02SculptingChart.Event targetEvent)
+    {
+        incomingSignals.Add(new IncomingSignal
+        {
+            SongTime = chart.GetBeatTime(Mathf.Max(0f, signalBeat)),
+            Sequence = sequence,
+            Type = type,
+            TargetEvent = targetEvent
+        });
+    }
+
+    private void UpdateIncomingSignals(double songTime)
+    {
+        while (nextIncomingSignalIndex < incomingSignals.Count
+            && songTime >= incomingSignals[nextIncomingSignalIndex].SongTime)
+        {
+            PlayIncomingSignal(incomingSignals[nextIncomingSignalIndex]);
+            nextIncomingSignalIndex++;
+        }
+    }
+
+    private void PlayIncomingSignal(IncomingSignal signal)
+    {
+        if (signal.Type == IncomingSignalType.ShortWhistle)
+        {
+            audioController?.PlayWhistleShort();
+
+            float shortDuration = audioController != null
+                ? audioController.GetWhistleShortDuration()
+                : 0f;
+            if (shortDuration <= 0f)
+            {
+                shortDuration = Mathf.Max(0f, whistleVisualDuration);
+            }
+
+            if (shortDuration > 0f)
+            {
+                foremanRat?.PlayWhistle(shortDuration);
+            }
+
+            return;
+        }
+
         audioController?.PlayWhistleLong();
+        ShowHoldCueForIncomingSignal(signal.TargetEvent);
 
         float duration = audioController != null
             ? audioController.GetWhistleLongDuration()
@@ -312,7 +462,8 @@ public sealed class Stage02SculptingController : MonoBehaviour
         double targetTime = chart.GetBeatTime(target.ChartEvent.targetBeat);
         double spawnTime = chart.GetBeatTime(target.ChartEvent.targetBeat - chart.LeadBeats);
         float progress = Mathf.Clamp01((float)((songTime - spawnTime) / Math.Max(targetTime - spawnTime, 0.0001d)));
-        target.Transform.position = Vector3.LerpUnclamped(slot1.position, slot2.position, progress);
+        Vector3 entryPosition = target.EntersFromRight ? slot3.position : slot1.position;
+        target.Transform.position = Vector3.LerpUnclamped(entryPosition, slot2.position, progress);
         target.Visual.UpdateApproachVisual(progress);
     }
 
@@ -339,11 +490,17 @@ public sealed class Stage02SculptingController : MonoBehaviour
     {
         double duration = Math.Max(target.ExitEndSongTime - target.ExitStartSongTime, 0.0001d);
         float progress = Mathf.Clamp01((float)((songTime - target.ExitStartSongTime) / duration));
-        target.Transform.position = Vector3.LerpUnclamped(target.ExitStartPosition, slot3.position, progress);
+        Vector3 exitPosition = target.EntersFromRight ? slot1.position : slot3.position;
+        target.Transform.position = Vector3.LerpUnclamped(target.ExitStartPosition, exitPosition, progress);
     }
 
     private void ProcessInput(double songTime)
     {
+        if (StagePauseMenuController.IsGameplayInputBlocked)
+        {
+            return;
+        }
+
         if (input.ActionAPressedThisFrame())
         {
             ProcessNormalInput(songTime);
@@ -661,8 +818,32 @@ public sealed class Stage02SculptingController : MonoBehaviour
             : TargetPhase.Resolved;
         target.ResultEndSongTime = songTime + chart.ResultHoldBeats * chart.BeatInterval;
         SuccessCount++;
+        RegisterGoalSuccess(target);
         audioController?.PlayComplete();
         Debug.Log($"[Stage02][SUCCESS] beat: {target.ChartEvent.targetBeat:0.###}", this);
+    }
+
+    private void RegisterGoalSuccess(RuntimeTarget target)
+    {
+        if (goalCounter == null || target == null)
+        {
+            return;
+        }
+
+        StageGoalCounter.GoalType goalType;
+        if (target.ChartEvent.targetType == Stage02SculptingChart.TargetType.Hold)
+        {
+            goalType = StageGoalCounter.GoalType.Stage02Hold;
+        }
+        else
+        {
+            int requiredHits = Mathf.Clamp(target.ChartEvent.requiredHits, 1, 2);
+            goalType = requiredHits == 1
+                ? StageGoalCounter.GoalType.Stage02OneHit
+                : StageGoalCounter.GoalType.Stage02TwoHit;
+        }
+
+        goalCounter.RegisterSuccess(goalType, target);
     }
 
     private void ResolveMiss(RuntimeTarget target, double songTime)
@@ -683,6 +864,7 @@ public sealed class Stage02SculptingController : MonoBehaviour
         target.Phase = TargetPhase.Resolved;
         target.ResultEndSongTime = songTime + chart.ResultHoldBeats * chart.BeatInterval;
         MissCount++;
+        lifeCounter?.RegisterMiss(target);
         audioController?.PlayMiss();
         Debug.Log($"[Stage02][MISS] beat: {target.ChartEvent.targetBeat:0.###}", this);
     }
@@ -708,56 +890,41 @@ public sealed class Stage02SculptingController : MonoBehaviour
         StopHoldVisualIfNeeded(target);
         woodpecker.PlayMissPeckFace();
         MissCount++;
+        lifeCounter?.RegisterMiss(target);
         audioController?.PlayMiss();
         Debug.Log($"[Stage02][MISS] beat: {target.ChartEvent.targetBeat:0.###}", this);
         BeginExit(target, songTime);
     }
 
-    private void UpdateHoldCue(double songTime)
+    private void ShowHoldCueForIncomingSignal(Stage02SculptingChart.Event targetEvent)
     {
-        if (holdCueBubble == null)
+        if (holdCueBubble == null || targetEvent == null
+            || targetEvent.targetType != Stage02SculptingChart.TargetType.Hold)
         {
             return;
         }
 
-        if (holdCueTarget != null)
-        {
-            if (holdCueTarget.Phase == TargetPhase.Active
-                && activeTargets.Contains(holdCueTarget))
-            {
-                return;
-            }
-
-            HideHoldCue(holdCueTarget);
-        }
-
-        RuntimeTarget nextHoldTarget = null;
-        double earliestTargetTime = double.MaxValue;
         foreach (RuntimeTarget target in activeTargets)
         {
-            if (target.Phase != TargetPhase.Active
-                || target.ChartEvent.targetType != Stage02SculptingChart.TargetType.Hold)
+            if (target.ChartEvent == targetEvent && target.Phase == TargetPhase.Active)
             {
-                continue;
+                ShowHoldCue(target);
+                return;
             }
-
-            double targetTime = chart.GetBeatTime(target.ChartEvent.targetBeat);
-            double showTime = targetTime - Mathf.Max(0f, holdCueLeadSeconds);
-            if (songTime < showTime || targetTime >= earliestTargetTime)
-            {
-                continue;
-            }
-
-            nextHoldTarget = target;
-            earliestTargetTime = targetTime;
         }
 
-        if (nextHoldTarget == null)
+        pendingHoldCueEvent = targetEvent;
+    }
+
+    private void ShowHoldCue(RuntimeTarget target)
+    {
+        if (target == null || target.ChartEvent.targetType != Stage02SculptingChart.TargetType.Hold)
         {
             return;
         }
 
-        holdCueTarget = nextHoldTarget;
+        HideHoldCue();
+        holdCueTarget = target;
         holdCueBubble.Show(
             TitleSession.SelectedInputMode,
             TitleSession.SelectedLanguage);
@@ -772,6 +939,10 @@ public sealed class Stage02SculptingController : MonoBehaviour
 
         holdCueBubble?.Hide();
         holdCueTarget = null;
+        if (target == null)
+        {
+            pendingHoldCueEvent = null;
+        }
     }
 
     private void StopHoldVisualIfNeeded(RuntimeTarget target)
